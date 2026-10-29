@@ -1,0 +1,1463 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="RDF와 온톨로지의 기초부터 Altair Graph Studio까지, 개념 중심으로 가볍게 읽는 책.">
+<title>가볍게 읽는 Graph Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;600;700&display=swap">
+<style>
+/* Layout: 책 한 권. 왼쪽에 고정 목차, 오른쪽에 65자 폭 본문 기둥. 그림은 본문 폭을 살짝 넘어 펼쳐진다.
+   Theme: 기본은 검정 바탕 + 흰 글자. 토글 버튼으로 data-theme="light"를 켜면 밝은 화면. 모든 색은 아래 토큰에서만 정의한다. */
+:root{
+  color-scheme:dark;
+  --paper:#0B0D10; --paper-2:#14181D; --ink:#F2F4F6; --muted:#9AA4B0; --line:#5C6773; --rule:#232A32;
+  --accent:#8FA8FF; --accent-soft:#1B2547; --amber:#F0B85A; --amber-soft:#3A2C12; --teal:#5FD4B0; --teal-soft:#10342B;
+  --node:#161B21; --code-bg:#12161B;
+  --glow:rgba(143,168,255,.35); --mark:rgba(240,184,90,.28); --net-line:rgba(154,164,176,.5); --shadow:rgba(0,0,0,.6);
+  --f-body:"Noto Serif KR","Nanum Myeongjo","Apple SD Gothic Neo",serif;
+  --f-ui:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --step--1:.8125rem; --step-0:1.03rem; --step-1:1.25rem; --step-2:1.6rem; --step-3:2.2rem; --step-4:clamp(2.4rem,6vw,3.8rem);
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --paper:#F6F7F5; --paper-2:#ECEFEC; --ink:#1B232B; --muted:#5B6672; --line:#8E9AA6; --rule:#D6DCD9;
+  --accent:#2C4EC2; --accent-soft:#DFE6FB; --amber:#A86F08; --amber-soft:#F6E8C9; --teal:#11795F; --teal-soft:#D3EDE5;
+  --node:#FFFFFF; --code-bg:#EDF0EE;
+  --glow:rgba(44,78,194,.25); --mark:rgba(240,184,90,.38); --net-line:rgba(91,102,114,.45); --shadow:rgba(20,30,40,.18);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:var(--step-0);line-height:1.9;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+a{color:var(--accent);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+
+.progress{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);height:3px;z-index:30;background:transparent}
+.progress span{display:block;height:100%;width:100%;background:var(--accent);box-shadow:0 0 8px var(--glow);transform-origin:left;transform:scaleX(0)}
+
+/* top bar (narrow screens) */
+.topbar{display:none}
+@media (max-width: 959px){
+  .topbar{display:flex;position:sticky;top:env(safe-area-inset-top,0px);z-index:20;align-items:center;justify-content:space-between;gap:12px;
+    margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px))) calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+    padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+    background:var(--paper);border-bottom:1px solid var(--rule);font-family:var(--f-ui)}
+  .topbar b{font-size:.95rem}
+}
+.btn{font:500 var(--step--1)/1 var(--f-ui);color:var(--ink);background:var(--paper-2);border:1px solid var(--rule);border-radius:999px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--line)}
+.top-actions{display:flex;gap:8px}
+.toc .theme-btn{margin:0 0 24px}
+
+.shell{display:grid;grid-template-columns:270px minmax(0,1fr);gap:56px;max-width:1180px;margin:0 auto}
+@media (max-width: 959px){.shell{grid-template-columns:minmax(0,1fr);gap:0}}
+
+/* table of contents */
+.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding-block:48px 32px;font-family:var(--f-ui)}
+.toc .brand{font-weight:700;font-size:1.05rem;letter-spacing:-.01em;margin:0 0 4px}
+.toc .brand-sub{font-size:var(--step--1);color:var(--muted);margin:0 0 28px;line-height:1.5}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc .part-label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:22px 0 6px;font-weight:500}
+.toc a{display:grid;grid-template-columns:2.1em 1fr;gap:4px;padding:5px 10px;margin-left:-10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:.88rem;line-height:1.45}
+.toc a .n{color:var(--muted);font-variant-numeric:tabular-nums}
+.toc a:hover{background:var(--paper-2)}
+.toc a.active{background:var(--accent-soft);color:var(--accent)}
+.toc a.active .n{color:var(--accent)}
+.toc .close{display:none}
+@media (max-width: 959px){
+  .toc{display:none}
+  .toc.open{display:block;position:fixed;inset:0;z-index:40;max-height:none;background:var(--paper);
+    padding:calc(24px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
+  .toc.open .close{display:inline-block;position:absolute;top:calc(18px + env(safe-area-inset-top,0px));right:max(20px,env(safe-area-inset-right,0px))}
+}
+
+main{min-width:0;padding-block:40px 120px}
+.col{max-width:680px}
+
+/* cover */
+.cover{position:relative;padding-block:24px 56px;border-bottom:1px solid var(--rule);margin-bottom:24px}
+.cover canvas{display:block;width:100%;height:190px;margin-bottom:28px}
+.eyebrow{font:500 .75rem/1.4 var(--f-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.cover h1{font:700 var(--step-4)/1.08 var(--f-ui);letter-spacing:-.03em;margin:0 0 20px;text-wrap:balance}
+.cover h1 em{font-style:normal;color:var(--accent)}
+.cover .lead{font-size:1.14rem;line-height:1.8;max-width:34em;margin:0 0 24px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;font:400 var(--step--1)/1.5 var(--f-ui);color:var(--muted);margin:0;padding:0;list-style:none}
+.meta b{color:var(--ink);font-weight:500}
+
+/* parts & chapters */
+.part{padding-block:72px 24px;margin-top:40px;border-top:1px solid var(--rule)}
+.part-no{font:500 .78rem/1 var(--f-ui);letter-spacing:.16em;color:var(--accent);margin:0 0 14px;text-transform:uppercase}
+.part h2{font:700 var(--step-3)/1.2 var(--f-ui);letter-spacing:-.02em;margin:0 0 12px;text-wrap:balance}
+.part p{color:var(--muted);margin:0;max-width:34em}
+.chapter{padding-top:56px}
+.ch-no{font:500 var(--step--1)/1 var(--f-ui);color:var(--muted);margin:0 0 10px;font-variant-numeric:tabular-nums}
+.chapter h3{font:700 var(--step-2)/1.3 var(--f-ui);letter-spacing:-.015em;margin:0 0 14px;text-wrap:balance}
+.ch-lede{font-size:1.08rem;color:var(--muted);margin:0 0 28px;line-height:1.75}
+.chapter h4{font:700 var(--step-1)/1.4 var(--f-ui);margin:40px 0 8px;text-wrap:balance}
+.chapter p{margin:0 0 1.1em}
+.chapter ul,.chapter ol.plain{padding-left:1.2em;margin:0 0 1.2em}
+.chapter li{margin-bottom:.4em}
+strong{font-weight:700}
+.term{font-family:var(--f-ui);font-weight:500;background:linear-gradient(transparent 60%,var(--mark) 60%)}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+p code,li code,td code,dd code{background:var(--code-bg);padding:1px 5px;border-radius:4px}
+
+pre.code{background:var(--code-bg);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;overflow-x:auto;font:400 .86rem/1.7 var(--f-mono);margin:0 0 1.4em;color:var(--ink)}
+.c-s{color:var(--accent)} .c-p{color:var(--amber)} .c-o{color:var(--teal)} .c-k{color:var(--muted);font-weight:500} .c-c{color:var(--muted);font-style:italic}
+
+/* note + summary */
+.note{border:1px solid var(--rule);background:var(--paper-2);border-radius:10px;padding:18px 20px;margin:28px 0}
+.note-label{font:700 var(--step--1)/1 var(--f-ui);color:var(--amber);margin:0 0 10px!important;letter-spacing:.04em}
+.note p:last-child{margin-bottom:0}
+.summary{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:baseline;border-top:1px solid var(--rule);padding-top:18px;margin-top:36px;font-size:.98rem}
+.summary span{font:700 .72rem/1 var(--f-ui);letter-spacing:.12em;color:var(--accent);white-space:nowrap}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;margin:0 0 1.4em}
+table{border-collapse:collapse;width:100%;font:400 .9rem/1.6 var(--f-ui)}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:.8rem;letter-spacing:.04em}
+td:first-child{font-weight:500;white-space:nowrap}
+
+/* figures */
+.fig{margin:36px -24px;padding:22px 24px 16px;border:1px solid var(--rule);border-radius:14px;background:var(--node)}
+@media (max-width: 720px){.fig{margin-inline:0;padding:16px 12px 12px}}
+.fig-body{overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:520px}
+.fig.small-ok svg{min-width:0}
+.fig figcaption{display:flex;gap:12px;align-items:baseline;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px dashed var(--rule);font:400 var(--step--1)/1.6 var(--f-ui);color:var(--muted)}
+.fig-no{font-weight:700;color:var(--ink);margin-right:6px}
+.replay{flex:none;font:500 .75rem/1 var(--f-ui);color:var(--accent);background:transparent;border:1px solid var(--rule);border-radius:999px;padding:6px 10px;cursor:pointer}
+.replay:hover{border-color:var(--accent)}
+
+/* svg vocabulary */
+svg text{font-family:var(--f-ui);font-size:13px;fill:var(--ink)}
+svg .sm{font-size:11px;fill:var(--muted)}
+svg .b{font-weight:700}
+svg .mono{font-family:var(--f-mono);font-size:12px}
+svg .mid{text-anchor:middle}
+svg .end{text-anchor:end}
+.n{fill:var(--node);stroke:var(--line);stroke-width:1.5}
+.n-cls{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.n-s{stroke:var(--accent);stroke-width:2}
+.n-o{stroke:var(--teal);stroke-width:2}
+.n-lit{fill:var(--paper-2);stroke:var(--line);stroke-width:1.5}
+.tbl{fill:var(--node);stroke:var(--line);stroke-width:1.2}
+.tbl-h{fill:var(--paper-2);stroke:none}
+.e{stroke:var(--line);stroke-width:1.6;fill:none}
+.e-acc{stroke:var(--accent)} .e-teal{stroke:var(--teal)}
+.e-amb{stroke:var(--amber);stroke-width:1.8}
+.e-inf{stroke:var(--amber);stroke-width:2;fill:none;stroke-dasharray:7 6}
+.e-dash{stroke-dasharray:4 4}
+.fk{stroke:var(--amber);stroke-width:1.4;fill:none;stroke-dasharray:3 3}
+.mk{fill:var(--line)} .mk-amb{fill:var(--amber)} .mk-acc{fill:var(--accent)} .mk-teal{fill:var(--teal)}
+.mk-tri{fill:var(--node);stroke:var(--line);stroke-width:1.2}
+.f-acc{fill:var(--accent)} .f-amb{fill:var(--amber)} .f-teal{fill:var(--teal)}
+.sep{stroke:var(--rule);stroke-width:1.2;stroke-dasharray:5 5}
+.sheet{stroke-width:1.6;fill-opacity:.96}
+.s1{fill:var(--teal-soft);stroke:var(--teal)} .s2{fill:var(--accent-soft);stroke:var(--accent)} .s3{fill:var(--amber-soft);stroke:var(--amber)} .s4{fill:var(--node);stroke:var(--ink)}
+.barbg{fill:var(--paper-2)} .bar{fill:var(--teal)}
+.particle{fill:var(--accent);filter:drop-shadow(0 0 3px var(--glow))}
+.hit{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.e-inf{filter:drop-shadow(0 0 2px var(--mark))}
+
+/* animation: everything rests in its final state; .play replays the build */
+.a-pop,.a-drop,.a-grow{transform-box:fill-box;transform-origin:center}
+.a-grow{transform-origin:left center}
+.a-draw{stroke-dasharray:var(--len,400);stroke-dashoffset:0}
+.fig.play .a-pop{animation:pop .55s cubic-bezier(.2,.9,.3,1.25) var(--d,0s) both}
+.fig.play .a-fade{animation:fade .5s ease var(--d,0s) both}
+.fig.play .a-draw{animation:draw .75s ease-out var(--d,0s) both}
+.fig.play .a-drop{animation:drop .7s cubic-bezier(.2,.8,.2,1) var(--d,0s) both}
+.fig.play .a-grow{animation:grow var(--dur,1s) ease-out var(--d,0s) both}
+.fig.play .a-hit{animation:hit .5s ease var(--d,0s) both}
+.fig.play .a-flash{animation:flash 1.1s ease var(--d,0s) both}
+.fig.play .a-flow{animation:flow 1.1s linear infinite}
+@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes draw{from{stroke-dashoffset:var(--len,400)}to{stroke-dashoffset:0}}
+@keyframes drop{from{opacity:0;transform:translateY(-34px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes hit{from{fill:var(--node);stroke:var(--line)}to{fill:var(--accent-soft);stroke:var(--accent)}}
+@keyframes flash{0%{background:transparent}25%{background:var(--accent-soft)}100%{background:transparent}}
+@keyframes flow{to{stroke-dashoffset:-26}}
+@media (prefers-reduced-motion: reduce){
+  .fig *,.fig.play *{animation:none!important}
+  .particle{display:none}
+}
+
+/* SPARQL match figure */
+.match{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:center}
+.match pre{margin:0;background:var(--code-bg);border-radius:8px;padding:14px 4px;font:400 .82rem/1.75 var(--f-mono);overflow-x:auto}
+.q-line{display:block;padding:0 12px;border-radius:4px;white-space:pre}
+.match svg{min-width:0}
+@media (max-width: 720px){.match{grid-template-columns:minmax(0,1fr)}}
+.res{margin-top:14px;max-width:340px}
+.res td{font-family:var(--f-ui);font-weight:400;white-space:normal}
+
+/* timeline */
+.timeline{list-style:none;margin:8px 0 1.6em;padding:0;border-left:2px solid var(--rule)}
+.timeline li{position:relative;padding:0 0 18px 22px;margin:0}
+.timeline li::before{content:"";position:absolute;left:-7px;top:.55em;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--accent)}
+.timeline .when{display:block;font:700 var(--step--1)/1.4 var(--f-ui);color:var(--accent)}
+
+/* glossary */
+.gloss{display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr);gap:0;margin:0 0 1.4em;border-top:1px solid var(--rule)}
+.gloss dt,.gloss dd{padding:12px 0;border-bottom:1px solid var(--rule);margin:0}
+.gloss dt{font:500 .92rem/1.6 var(--f-ui);padding-right:14px}
+.gloss dt small{display:block;color:var(--muted);font-weight:400;font-size:.76rem}
+.gloss dd{font-size:.95rem;line-height:1.75}
+.gloss .grp{grid-column:1/-1;font:700 .72rem/1 var(--f-ui);letter-spacing:.12em;color:var(--accent);padding:22px 0 10px;border-bottom:1px solid var(--rule)}
+@media (max-width: 560px){.gloss{grid-template-columns:minmax(0,1fr)}.gloss dt{border-bottom:none;padding-bottom:0}}
+
+.habits{counter-reset:h;list-style:none;padding:0!important}
+.habits li{counter-increment:h;display:grid;grid-template-columns:2.2em 1fr;gap:6px;margin-bottom:1.1em}
+.habits li::before{content:counter(h);font:700 1.1rem/1.6 var(--f-ui);color:var(--accent)}
+.habits b{font-family:var(--f-ui)}
+
+.access{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:14px;margin:8px 0 1.6em}
+.access div{border:1px solid var(--rule);border-radius:10px;padding:14px 16px;min-width:0}
+.access b{display:block;font:700 .95rem/1.4 var(--f-ui);margin-bottom:6px}
+.access p{font-size:.9rem;line-height:1.7;margin:0!important;color:var(--muted)}
+
+/* glossary links + tooltip */
+a.gl{color:inherit;text-decoration:underline dotted var(--accent);text-decoration-thickness:1.5px;text-underline-offset:4px;cursor:help;border-radius:3px}
+a.gl:hover,a.gl:focus-visible{color:var(--accent)}
+.gl-tip{position:fixed;z-index:50;left:0;top:0;max-width:min(320px,calc(100vw - 32px));background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+  font:400 .85rem/1.65 var(--f-ui);color:var(--ink);box-shadow:0 12px 32px var(--shadow);pointer-events:none;word-break:keep-all}
+.gl-tip b{display:block;color:var(--accent);font-weight:700;margin-bottom:4px}
+.gl-tip em{display:block;font-style:normal;color:var(--muted);font-size:.74rem;margin-top:8px}
+.backbtn{position:fixed;z-index:45;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  font:500 var(--step--1)/1 var(--f-ui);color:var(--ink);background:var(--paper-2);border:1px solid var(--accent);border-radius:999px;padding:12px 18px;cursor:pointer;box-shadow:0 8px 24px var(--shadow)}
+.backbtn:hover{background:var(--accent-soft)}
+.gloss dt{scroll-margin-top:96px}
+.gloss dt .ret{display:none;margin-left:10px;font:500 .72rem/1.6 var(--f-ui);color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:1px 8px;vertical-align:middle}
+.gloss dt.can-return{cursor:pointer}
+.gloss dt.can-return .ret{display:inline-block}
+.gloss dt.can-return:hover .gt,.gloss dt.can-return:focus-visible .gt{color:var(--accent);text-decoration:underline;text-underline-offset:4px}
+a.gl.flash{animation:glflash 2.4s ease}
+.gloss dd p{margin:0 0 .5em}
+.gloss dd ul{margin:.3em 0 .6em;padding-left:1.1em}
+.gloss dd pre.code{margin:.6em 0;font-size:.8rem}
+.gloss dd .tbl-wrap{margin:.6em 0}
+.gloss dd .ref{font:400 .74rem/1.4 var(--f-ui);color:var(--muted)}
+.gloss .flash{animation:glflash 2.4s ease}
+@keyframes glflash{0%,45%{background:var(--accent-soft)}100%{background:transparent}}
+@media (prefers-reduced-motion: reduce){.gloss .flash,a.gl.flash{animation:none;background:var(--accent-soft)}}
+
+.endnote{margin-top:96px;padding-top:28px;border-top:1px solid var(--rule);font:400 var(--step--1)/1.7 var(--f-ui);color:var(--muted)}
+</style>
+<script>
+/* 저장된 화면 모드를 먼저 적용해 깜빡임을 막는다. 기본은 어두운 화면 */
+(function(){ var t = 'dark'; try { if (localStorage.getItem('gs-theme') === 'light') t = 'light'; } catch (e) {} document.documentElement.setAttribute('data-theme', t); })();
+</script>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk"/></marker>
+    <marker id="arr-amb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-amb"/></marker>
+    <marker id="arr-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-acc"/></marker>
+    <marker id="arr-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-teal"/></marker>
+    <marker id="tri" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path d="M1,1 L11,6 L1,11 z" class="mk-tri"/></marker>
+  </defs>
+</svg>
+
+<div class="progress" aria-hidden="true"><span id="bar"></span></div>
+
+<header class="topbar">
+  <b>가볍게 읽는 Graph Studio</b>
+  <div class="top-actions">
+    <button class="btn theme-btn" type="button" data-theme-toggle>밝게</button>
+    <button class="btn" id="tocOpen" aria-controls="toc" aria-expanded="false">목차</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" id="toc" aria-label="목차">
+    <button class="btn close" id="tocClose">닫기</button>
+    <p class="brand">가볍게 읽는 Graph Studio</p>
+    <p class="brand-sub">온톨로지와 Altair Graph Studio를<br>가볍게 읽는 책</p>
+    <button class="btn theme-btn" type="button" data-theme-toggle>밝게</button>
+    <ol>
+      <li><a href="#intro"><span class="n">·</span><span>들어가며</span></a></li>
+      <li class="part-label">1부 · 연결의 언어</li>
+      <li><a href="#ch1"><span class="n">1</span><span>왜 그래프인가</span></a></li>
+      <li><a href="#ch2"><span class="n">2</span><span>RDF, 세 단어로 쓰는 문장</span></a></li>
+      <li><a href="#ch3"><span class="n">3</span><span>온톨로지, 의미의 설계도</span></a></li>
+      <li><a href="#ch4"><span class="n">4</span><span>추론, 적힌 것보다 많이 알기</span></a></li>
+      <li><a href="#ch5"><span class="n">5</span><span>SPARQL, 그래프에 묻는 법</span></a></li>
+      <li class="part-label">2부 · Altair Graph Studio</li>
+      <li><a href="#ch6"><span class="n">6</span><span>Graph Studio는 어디서 왔나</span></a></li>
+      <li><a href="#ch7"><span class="n">7</span><span>데이터가 지나가는 길</span></a></li>
+      <li><a href="#ch8"><span class="n">8</span><span>그래프마트와 레이어</span></a></li>
+      <li><a href="#ch9"><span class="n">9</span><span>Graph Studio 안의 온톨로지</span></a></li>
+      <li><a href="#ch10"><span class="n">10</span><span>엔진, Graph Lakehouse</span></a></li>
+      <li><a href="#ch11"><span class="n">11</span><span>그래프 활용하기</span></a></li>
+      <li class="part-label">3부 · 정리</li>
+      <li><a href="#ch12"><span class="n">12</span><span>좋은 온톨로지의 습관</span></a></li>
+      <li><a href="#ch13"><span class="n">13</span><span>용어집</span></a></li>
+      <li><a href="#outro"><span class="n">·</span><span>마치며</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+  <div class="col">
+
+    <!-- ============ COVER ============ -->
+    <section class="cover" id="intro">
+      <canvas id="net" aria-hidden="true"></canvas>
+      <p class="eyebrow">지식 그래프와 온톨로지 이야기</p>
+      <h1><em>가볍게 읽는</em><br>Graph Studio</h1>
+      <p class="lead">데이터를 표가 아니라 관계로 읽는 법을 다룹니다. RDF와 온톨로지의 기초에서 시작해 Altair Graph Studio가 그 생각을 어떻게 제품으로 옮겼는지까지, 처음부터 끝까지 편하게 읽히도록 썼습니다.</p>
+      <ul class="meta">
+        <li><b>3부 13장</b></li>
+        <li>실습 없음, 개념 중심</li>
+      </ul>
+    </section>
+
+    <!-- ============ PART 1 ============ -->
+    <div class="part" id="part1">
+      <p class="part-no">1부</p>
+      <h2>연결의 언어</h2>
+      <p>그래프로 생각한다는 게 무엇인지, 그리고 기계가 그 생각을 읽게 하는 표준들을 봅니다.</p>
+    </div>
+
+    <!-- CH1 -->
+    <section class="chapter" id="ch1">
+      <p class="ch-no">제1장</p>
+      <h3>왜 그래프인가</h3>
+      <p class="ch-lede">회사의 데이터는 많은데, 질문 하나에 답하려면 왜 이렇게 오래 걸릴까요.</p>
+
+      <p>고객 정보는 CRM에, 주문은 ERP에, 문의 내역은 헬프데스크 시스템에 있습니다. 각 시스템에는 저마다 표가 따로 있고, 같은 고객도 시스템마다 다른 번호와 다른 이름 표기로 저장됩니다.</p>
+      <p>이제 이런 질문을 받았다고 해 봅시다. <em>"지난달 불만을 접수한 고객 중에서 같은 제품을 다시 산 사람은 누구인가?"</em> 이 질문은 세 시스템을 가로지릅니다. 답을 내려면 먼저 세 시스템의 고객이 같은 사람인지 맞춰야 하고, 그다음 표들을 이어 붙여야 합니다.</p>
+
+      <h4>표와 그래프가 관계를 저장하는 방식</h4>
+      <p>관계형 데이터베이스에서 관계는 <span class="term">외래 키</span>라는 값 속에 숨어 있습니다. 주문 표의 <code>고객_id = 17</code>은 "17번 고객이 이 주문을 했다"는 뜻이지만, 그 뜻은 질의할 때 조인으로 다시 계산해야 드러납니다.</p>
+      <p>그래프에서는 관계가 데이터 그 자체라서 "김민지가 주문 1042를 했다"는 사실이 선 하나로 저장됩니다. 관계를 따라가는 일이 계산이 아니라 길 찾기가 됩니다.</p>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body">
+        <svg viewBox="0 0 640 250" role="img" aria-label="왼쪽은 고객, 주문, 제품 표가 키 값으로 연결된 모습, 오른쪽은 같은 내용을 노드와 화살표로 그린 그래프">
+          <text x="20" y="22" class="sm">관계형: 관계는 키 값 속에 있다</text>
+          <text x="390" y="22" class="sm">그래프: 관계가 곧 데이터다</text>
+          <g class="a-fade" style="--d:0s">
+            <rect x="20" y="40" width="120" height="72" rx="6" class="tbl"/><rect x="21" y="41" width="118" height="22" rx="5" class="tbl-h"/>
+            <text x="30" y="57" class="b">고객</text><text x="30" y="83" class="mono">id = 17</text><text x="30" y="103">이름 = 김민지</text>
+            <rect x="20" y="140" width="120" height="92" rx="6" class="tbl"/><rect x="21" y="141" width="118" height="22" rx="5" class="tbl-h"/>
+            <text x="30" y="157" class="b">주문</text><text x="30" y="183" class="mono">id = 1042</text>
+            <text x="30" y="203" class="mono f-amb">고객_id = 17</text><text x="30" y="223" class="mono f-amb">제품_id = 88</text>
+            <rect x="180" y="90" width="110" height="72" rx="6" class="tbl"/><rect x="181" y="91" width="108" height="22" rx="5" class="tbl-h"/>
+            <text x="190" y="107" class="b">제품</text><text x="190" y="133" class="mono">id = 88</text><text x="190" y="153">이름 = 노트북</text>
+          </g>
+          <path d="M140,198 C168,198 168,79 140,79" class="fk a-draw" style="--d:.4s;--len:180"/>
+          <path d="M140,218 C166,218 158,129 180,129" class="fk a-draw" style="--d:.6s;--len:160"/>
+          <line x1="306" y1="135" x2="350" y2="135" class="e" marker-end="url(#arr)" stroke-width="2"/>
+          <g class="a-fade" style="--d:.9s"><text x="328" y="122" class="sm mid">같은 내용</text></g>
+          <circle cx="430" cy="80" r="34" class="n n-s a-pop" style="--d:1.1s"/>
+          <text x="430" y="85" class="mid b a-fade" style="--d:1.2s">김민지</text>
+          <circle cx="510" cy="196" r="34" class="n a-pop" style="--d:1.3s"/>
+          <text x="510" y="201" class="mid a-fade" style="--d:1.4s">주문 1042</text>
+          <circle cx="592" cy="80" r="34" class="n n-o a-pop" style="--d:1.5s"/>
+          <text x="592" y="85" class="mid b a-fade" style="--d:1.6s">노트북</text>
+          <line x1="449" y1="109" x2="490" y2="167" class="e e-amb a-draw" marker-end="url(#arr-amb)" style="--d:1.8s;--len:80"/>
+          <line x1="528" y1="167" x2="573" y2="109" class="e e-amb a-draw" marker-end="url(#arr-amb)" style="--d:2.1s;--len:80"/>
+          <text x="462" y="146" class="end f-amb a-fade" style="--d:2s">주문했다</text>
+          <text x="558" y="146" class="f-amb a-fade" style="--d:2.3s">담았다</text>
+        </svg>
+        </div>
+        <figcaption><span><span class="fig-no">그림 1-1</span>왼쪽의 점선은 질의할 때 계산해야 하는 관계, 오른쪽의 화살표는 저장된 관계입니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <h4>그래프 데이터베이스의 두 종류</h4>
+      <p>그래프 데이터베이스라고 해서 다 같지는 않습니다. 크게 두 계열이 있습니다.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th></th><th>속성 그래프</th><th>RDF 그래프</th></tr></thead>
+          <tbody>
+            <tr><td>기본 단위</td><td>노드와 엣지, 그리고 각각에 붙는 속성</td><td>주어·술어·목적어로 된 트리플</td></tr>
+            <tr><td>이름 짓기</td><td>데이터베이스 안에서만 유일한 ID</td><td>웹 주소 형태의 전역 식별자(IRI)</td></tr>
+            <tr><td>표준</td><td>제품마다 달랐고 최근 GQL로 표준화 중</td><td>W3C 표준(RDF, RDFS, OWL, SPARQL)</td></tr>
+            <tr><td>강점</td><td>경로 탐색, 개발자 친화적 모델</td><td>여러 출처 통합, 의미 정의, 추론</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Altair Graph Studio는 <strong>RDF 계열</strong>입니다. 그래서 이 책의 1부는 RDF 쪽 표준을 중심으로 이야기합니다.</p>
+
+      <aside class="note">
+        <p class="note-label">짚고 가기</p>
+        <p>그래프가 표보다 늘 낫지는 않습니다. 구조가 단순하고 고정된 업무 데이터라면 표가 더 잘 맞습니다. 그래프는 관계가 많을 때, 구조가 자주 바뀔 때, 그리고 무엇보다 <em>여러 출처를 하나로 합쳐야 할 때</em> 힘을 냅니다.</p>
+      </aside>
+
+      <p class="summary"><span>한 줄 요약</span>그래프는 관계를 계산하지 않고 저장한다. 그래서 흩어진 데이터를 잇는 데 강하다.</p>
+    </section>
+
+    <!-- CH2 -->
+    <section class="chapter" id="ch2">
+      <p class="ch-no">제2장</p>
+      <h3>RDF, 세 단어로 쓰는 문장</h3>
+      <p class="ch-lede">세상의 모든 사실을 "누가, 어떻게, 무엇을"이라는 짧은 문장으로 적을 수 있다면 어떨까요.</p>
+
+      <p><span class="term">RDF</span>(Resource Description Framework)는 W3C가 정한 데이터 표현 방식입니다. 규칙은 하나뿐인데, 모든 사실을 <strong>주어, 술어, 목적어</strong> 세 부분으로 된 문장으로 적습니다. 이 문장을 <span class="term">트리플</span>이라고 부릅니다.</p>
+      <ul>
+        <li><strong>민지는</strong> <strong>ACME에서 일한다</strong>: 주어 <code>민지</code>, 술어 <code>일한다</code>, 목적어 <code>ACME</code></li>
+        <li><strong>ACME는</strong> <strong>서울에 있다</strong>: 주어 <code>ACME</code>, 술어 <code>위치한다</code>, 목적어 <code>서울</code></li>
+      </ul>
+      <p>첫 문장의 목적어였던 ACME가 두 번째 문장에서는 주어가 됩니다. 이렇게 트리플이 서로 이어져 그래프를 이룹니다. 표를 설계할 필요 없이 문장을 더할수록 그래프가 자랍니다.</p>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body">
+        <svg viewBox="0 0 640 262" role="img" aria-label="트리플 세 개가 차례로 이어져 작은 그래프가 되는 그림">
+          <text x="120" y="24" class="mid b f-acc a-fade" style="--d:.1s">주어</text>
+          <text x="293" y="24" class="mid b f-amb a-fade" style="--d:.7s">술어</text>
+          <text x="470" y="24" class="mid b f-teal a-fade" style="--d:1.3s">목적어</text>
+          <ellipse cx="120" cy="70" rx="62" ry="24" class="n n-s a-pop" style="--d:0s"/>
+          <text x="120" y="75" class="mono mid">ex:minji</text>
+          <line x1="182" y1="70" x2="404" y2="70" class="e a-draw" marker-end="url(#arr)" style="--d:.5s;--len:230"/>
+          <text x="293" y="60" class="mono mid f-amb a-fade" style="--d:.8s">ex:worksFor</text>
+          <ellipse cx="470" cy="70" rx="62" ry="24" class="n n-o a-pop" style="--d:1.2s"/>
+          <text x="470" y="75" class="mono mid">ex:acme</text>
+          <line x1="470" y1="94" x2="470" y2="182" class="e a-draw" marker-end="url(#arr)" style="--d:1.9s;--len:90"/>
+          <text x="480" y="142" class="mono sm a-fade" style="--d:2.1s">ex:locatedIn</text>
+          <ellipse cx="470" cy="210" rx="62" ry="24" class="n a-pop" style="--d:2.4s"/>
+          <text x="470" y="215" class="mono mid">ex:seoul</text>
+          <line x1="120" y1="94" x2="120" y2="182" class="e a-draw" marker-end="url(#arr)" style="--d:2.9s;--len:90"/>
+          <text x="130" y="142" class="mono sm a-fade" style="--d:3.1s">foaf:name</text>
+          <rect x="60" y="186" width="120" height="48" rx="3" class="n-lit a-pop" style="--d:3.3s"/>
+          <text x="120" y="215" class="mid a-fade" style="--d:3.4s">"김민지"</text>
+          <g class="a-fade" style="--d:2.6s">
+            <text x="295" y="198" class="sm mid">첫 문장의 목적어가</text>
+            <text x="295" y="216" class="sm mid">다음 문장의 주어가 된다</text>
+          </g>
+        </svg>
+        </div>
+        <figcaption><span><span class="fig-no">그림 2-1</span>타원은 이름(IRI)이 붙은 자원, 사각형은 글자나 숫자 같은 값(리터럴)입니다. RDF 그림에서 흔히 쓰는 관례입니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <h4>IRI: 겹치지 않는 이름</h4>
+      <p>RDF는 사물과 관계에 <span class="term">IRI</span>라는 이름을 붙입니다. 웹 주소처럼 생긴 식별자입니다. <code>http://example.com/minji</code>처럼요. 매번 길게 쓰기 번거로우니 <code>ex:minji</code>처럼 접두어로 줄여 씁니다.</p>
+      <p>웹 주소 형태를 쓰는 이유는 도메인이 다르면 이름이 겹치지 않기 때문입니다. 영업팀의 <code>sales:Customer</code>와 재무팀의 <code>fin:Customer</code>가 섞여도 헷갈리지 않고, 둘이 같은 뜻이라면 나중에 "같다"는 문장 하나만 더하면 됩니다. 그래서 RDF에서는 여러 출처를 합치는 일이 쉽습니다.</p>
+
+      <h4>값: 리터럴</h4>
+      <p>이름, 날짜, 금액 같은 값은 <span class="term">리터럴</span>입니다. 리터럴에는 자료형을 붙일 수 있습니다. <code>"2026-10-26"^^xsd:date</code>는 글자가 아니라 날짜로 다뤄지고, <code>"김민지"@ko</code>처럼 언어 태그를 붙이면 같은 대상의 이름을 여러 언어로 둘 수 있습니다.</p>
+
+      <h4>적는 방법: Turtle</h4>
+      <p>트리플을 파일에 적는 형식은 여러 가지인데, 사람이 읽기 가장 편한 것이 <span class="term">Turtle</span>입니다. 위 그림을 Turtle로 적으면 이렇습니다.</p>
+<pre class="code"><span class="c-k">@prefix</span> ex:   &lt;http://example.com/&gt; .
+<span class="c-k">@prefix</span> foaf: &lt;http://xmlns.com/foaf/0.1/&gt; .
+
+<span class="c-s">ex:minji</span>  <span class="c-p">ex:worksFor</span>  <span class="c-o">ex:acme</span> ;
+          <span class="c-p">foaf:name</span>    <span class="c-o">"김민지"@ko</span> .
+<span class="c-s">ex:acme</span>   <span class="c-p">ex:locatedIn</span> <span class="c-o">ex:seoul</span> .
+<span class="c-c"># 세미콜론(;)은 "같은 주어로 계속", 마침표(.)는 "문장 끝"</span></pre>
+
+      <h4>트리플 묶음에 이름 붙이기: 네임드 그래프</h4>
+      <p>트리플을 묶고 그 묶음에 이름을 붙인 것을 <span class="term">네임드 그래프</span>라고 합니다. "이 트리플들은 CRM에서 왔다", "이것들은 어제 계산한 결과다"처럼 출처와 버전을 구분할 때 씁니다. 2부에서 볼 Graph Studio의 데이터셋과 레이어도 결국 이런 묶음 위에서 동작합니다.</p>
+
+      <p class="summary"><span>한 줄 요약</span>RDF는 모든 사실을 주어·술어·목적어 트리플로 적고, 전역 이름(IRI)으로 서로 잇는다.</p>
+    </section>
+
+    <!-- CH3 -->
+    <section class="chapter" id="ch3">
+      <p class="ch-no">제3장</p>
+      <h3>온톨로지, 의미의 설계도</h3>
+      <p class="ch-lede">트리플만으로는 "직원"이 "사람"의 한 종류라는 것을 기계가 알 수 없습니다. 그 약속을 적는 곳이 온톨로지입니다.</p>
+
+      <p><span class="term">온톨로지</span>는 원래 철학에서 "존재하는 것이 무엇인가"를 묻는 분야의 이름입니다. 데이터 세계에서는 뜻이 좀 더 실용적입니다. <strong>어떤 분야에 어떤 종류의 것들이 있고, 그것들이 서로 어떻게 관계 맺는지를 기계가 읽을 수 있게 적어 둔 약속</strong>입니다.</p>
+
+      <h4>세 가지 재료</h4>
+      <ul>
+        <li><strong>클래스</strong>: 사물의 종류입니다. 사람, 직원, 회사, 제품.</li>
+        <li><strong>속성</strong>: 관계나 특징입니다. 다른 사물을 가리키면 <em>객체 속성</em>(일한다 → 회사), 값을 가지면 <em>데이터 속성</em>(이름 → "김민지")입니다.</li>
+        <li><strong>개체</strong>: 클래스에 속하는 실제 대상입니다. 김민지, ACME. 인스턴스라고도 합니다.</li>
+      </ul>
+      <p>클래스는 계층을 이룹니다. "직원은 사람의 하위 클래스다"(<code>rdfs:subClassOf</code>)라고 적으면, 직원에 대해 참인 것은 사람에 대해서도 참이 됩니다. 속성에는 <em>도메인</em>과 <em>범위</em>를 정해 둘 수도 있습니다. "<code>worksFor</code>의 주어는 직원이고 목적어는 회사다" 같은 식입니다.</p>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body">
+        <svg viewBox="0 0 640 312" role="img" aria-label="owl:Thing 아래 사람과 조직, 그 아래 직원과 회사 클래스가 있고, 실제 개체 민지와 ACME가 각각 직원과 회사에 속하는 그림">
+          <text x="20" y="112" class="b">TBox</text><text x="20" y="130" class="sm">클래스와 속성</text>
+          <text x="20" y="278" class="b">ABox</text><text x="20" y="296" class="sm">실제 개체</text>
+          <rect x="265" y="22" width="140" height="36" rx="18" class="n-cls a-pop" style="--d:0s"/>
+          <text x="335" y="45" class="mid mono">owl:Thing</text>
+          <rect x="140" y="102" width="140" height="36" rx="18" class="n-cls a-pop" style="--d:.3s"/>
+          <text x="210" y="125" class="mid">사람 · Person</text>
+          <rect x="390" y="102" width="150" height="36" rx="18" class="n-cls a-pop" style="--d:.4s"/>
+          <text x="465" y="125" class="mid">조직 · Organization</text>
+          <line x1="230" y1="102" x2="306" y2="60" class="e a-draw" marker-end="url(#tri)" style="--d:.6s;--len:90"/>
+          <line x1="445" y1="102" x2="366" y2="60" class="e a-draw" marker-end="url(#tri)" style="--d:.6s;--len:90"/>
+          <rect x="140" y="182" width="140" height="36" rx="18" class="n-cls a-pop" style="--d:.9s"/>
+          <text x="210" y="205" class="mid">직원 · Employee</text>
+          <rect x="390" y="182" width="150" height="36" rx="18" class="n-cls a-pop" style="--d:1s"/>
+          <text x="465" y="205" class="mid">회사 · Company</text>
+          <line x1="210" y1="182" x2="210" y2="141" class="e a-draw" marker-end="url(#tri)" style="--d:1.2s;--len:45"/>
+          <line x1="465" y1="182" x2="465" y2="141" class="e a-draw" marker-end="url(#tri)" style="--d:1.2s;--len:45"/>
+          <text x="218" y="166" class="sm mono a-fade" style="--d:1.3s">subClassOf</text>
+          <line x1="280" y1="200" x2="386" y2="200" class="e e-amb a-draw" marker-end="url(#arr-amb)" style="--d:1.5s;--len:110"/>
+          <text x="333" y="192" class="mid mono f-amb a-fade" style="--d:1.6s">worksFor</text>
+          <line x1="20" y1="240" x2="620" y2="240" class="sep a-fade" style="--d:1.8s"/>
+          <rect x="155" y="258" width="110" height="32" rx="6" class="n a-pop" style="--d:2s"/>
+          <text x="210" y="279" class="mid mono">ex:minji</text>
+          <rect x="410" y="258" width="110" height="32" rx="6" class="n a-pop" style="--d:2.1s"/>
+          <text x="465" y="279" class="mid mono">ex:acme</text>
+          <g class="a-fade" style="--d:2.3s">
+            <line x1="210" y1="258" x2="210" y2="222" class="e e-dash" marker-end="url(#arr)"/>
+            <line x1="465" y1="258" x2="465" y2="222" class="e e-dash" marker-end="url(#arr)"/>
+            <text x="218" y="252" class="sm mono">rdf:type</text>
+          </g>
+          <line x1="265" y1="274" x2="406" y2="274" class="e e-amb a-draw" marker-end="url(#arr-amb)" style="--d:2.6s;--len:150"/>
+          <text x="335" y="267" class="mid sm mono a-fade" style="--d:2.7s">worksFor</text>
+        </svg>
+        </div>
+        <figcaption><span><span class="fig-no">그림 3-1</span>위쪽은 설계도(TBox), 아래쪽은 그 설계도를 따르는 실제 데이터(ABox)입니다. 속빈 화살표는 "~의 한 종류"를 뜻합니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <h4>설계도와 실제 데이터: TBox와 ABox</h4>
+      <p>온톨로지 쪽에서는 클래스와 속성의 정의를 <span class="term">TBox</span>(용어 상자), 실제 개체에 대한 사실을 <span class="term">ABox</span>(단언 상자)라고 나눠 부릅니다. 둘 다 트리플로 적히므로 설계도와 데이터가 같은 언어로 같은 곳에 함께 저장됩니다. 그래서 "직원 클래스에는 어떤 속성이 있지?" 같은 질문도 데이터 질의와 똑같은 방법으로 할 수 있습니다.</p>
+
+      <h4>RDFS와 OWL</h4>
+      <p>온톨로지를 적는 표준 어휘는 두 단계가 있습니다.</p>
+      <ul>
+        <li><strong>RDFS</strong>: 기본 어휘입니다. 클래스, 하위 클래스, 속성, 도메인, 범위, 레이블과 설명.</li>
+        <li><strong>OWL</strong>: 더 풍부한 표현입니다. "이 두 클래스는 같다", "사람이면서 회사일 수는 없다", "직원은 정확히 한 명의 상사를 가진다", "<code>worksFor</code>의 반대는 <code>employs</code>다", "<code>partOf</code>는 이어서 따라갈 수 있다" 같은 규칙을 적을 수 있습니다.</li>
+      </ul>
+
+      <h4>스키마와 무엇이 다른가</h4>
+      <p>데이터베이스 스키마도 구조를 정의하니 비슷해 보입니다. 하지만 목적이 다릅니다.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th></th><th>데이터베이스 스키마</th><th>온톨로지</th></tr></thead>
+          <tbody>
+            <tr><td>목적</td><td>저장 구조를 강제한다</td><td>의미를 설명하고 추론에 쓴다</td></tr>
+            <tr><td>변경</td><td>바꾸려면 마이그레이션이 필요하다</td><td>문장을 더하면 확장된다</td></tr>
+            <tr><td>빠진 값</td><td>없으면 없는 것(닫힌 세계)</td><td>모를 뿐 거짓은 아니다(열린 세계)</td></tr>
+            <tr><td>범위</td><td>한 시스템 안</td><td>여러 시스템과 조직을 가로질러 공유</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <aside class="note">
+        <p class="note-label">짚고 가기 · 열린 세계 가정</p>
+        <p>데이터베이스에서 "민지의 전화번호" 칸이 비어 있으면 보통 "전화번호가 없다"고 해석합니다. 온톨로지는 다릅니다. 적혀 있지 않으면 <em>아직 모른다</em>고 봅니다. 여러 출처의 데이터가 계속 합쳐지는 환경에서는 이쪽이 더 정직한 태도입니다. 대신 "반드시 있어야 하는 값"을 검사하려면 별도의 검증 규칙이 필요합니다. W3C의 SHACL이 이 역할을 하는 표준입니다.</p>
+      </aside>
+
+      <p class="summary"><span>한 줄 요약</span>온톨로지는 클래스·속성·개체로 분야의 의미를 정의한 약속이며, 그 자체도 트리플로 저장된다.</p>
+    </section>
+
+    <!-- CH4 -->
+    <section class="chapter" id="ch4">
+      <p class="ch-no">제4장</p>
+      <h3>추론, 적힌 것보다 많이 알기</h3>
+      <p class="ch-lede">온톨로지에 적은 규칙이 있으면, 기계는 데이터에 직접 적히지 않은 사실도 알아낼 수 있습니다.</p>
+
+      <p>민지가 직원이라는 사실이 있고, 온톨로지에 "직원은 사람의 한 종류"라고 적혀 있다고 합시다. 그러면 누구도 "민지는 사람이다"라고 적지 않았지만 그 사실은 참입니다. 이렇게 규칙에서 새 사실을 끌어내는 것을 <span class="term">추론</span>이라고 합니다.</p>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body">
+        <svg viewBox="0 0 640 232" role="img" aria-label="민지는 직원이고 직원은 사람의 하위 클래스이므로 민지는 사람이라는 사실이 추론되는 그림">
+          <rect x="50" y="152" width="120" height="36" rx="6" class="n a-pop" style="--d:0s"/>
+          <text x="110" y="175" class="mid mono">ex:minji</text>
+          <rect x="260" y="152" width="140" height="36" rx="18" class="n-cls a-pop" style="--d:.2s"/>
+          <text x="330" y="175" class="mid">직원</text>
+          <rect x="480" y="152" width="140" height="36" rx="18" class="n-cls a-pop" style="--d:.4s"/>
+          <text x="550" y="175" class="mid">사람</text>
+          <line x1="170" y1="170" x2="256" y2="170" class="e a-draw" marker-end="url(#arr)" style="--d:.7s;--len:90"/>
+          <text x="213" y="160" class="mid sm mono a-fade" style="--d:.8s">rdf:type</text>
+          <text x="213" y="216" class="mid sm a-fade" style="--d:.9s">① 적힌 사실</text>
+          <line x1="400" y1="170" x2="476" y2="170" class="e a-draw" marker-end="url(#tri)" style="--d:1.1s;--len:80"/>
+          <text x="438" y="160" class="mid sm mono a-fade" style="--d:1.2s">subClassOf</text>
+          <text x="438" y="216" class="mid sm a-fade" style="--d:1.3s">② 적힌 규칙</text>
+          <g class="a-fade" style="--d:1.9s">
+            <path d="M110,152 Q330,0 550,152" class="e-inf a-flow" marker-end="url(#arr-amb)"/>
+            <text x="330" y="66" class="mid b mono f-amb">rdf:type (추론)</text>
+            <text x="330" y="40" class="mid sm">③ 엔진이 알아낸 사실: 민지는 사람이다</text>
+          </g>
+        </svg>
+        </div>
+        <figcaption><span><span class="fig-no">그림 4-1</span>실선은 데이터에 적힌 것, 흐르는 점선은 추론으로 생긴 것입니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <h4>자주 쓰이는 추론 규칙</h4>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>규칙</th><th>적힌 것</th><th>알아내는 것</th></tr></thead>
+          <tbody>
+            <tr><td>하위 클래스</td><td>민지는 직원, 직원은 사람의 하위 클래스</td><td>민지는 사람</td></tr>
+            <tr><td>도메인·범위</td><td>민지 worksFor ACME, worksFor의 범위는 회사</td><td>ACME는 회사</td></tr>
+            <tr><td>역관계</td><td>민지 worksFor ACME, worksFor의 역은 employs</td><td>ACME employs 민지</td></tr>
+            <tr><td>전이</td><td>강남구 partOf 서울, 서울 partOf 대한민국</td><td>강남구 partOf 대한민국</td></tr>
+            <tr><td>같음</td><td>crm:C17 sameAs erp:CL-0099</td><td>두 고객 정보를 하나로 본다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <aside class="note">
+        <p class="note-label">짚고 가기 · 추론의 비용</p>
+        <p>추론에는 비용이 듭니다. OWL의 표현력을 모두 쓰면 계산이 폭발적으로 늘어날 수 있습니다. 그래서 실무에서는 두 가지 방법을 섞습니다. 꼭 필요한 규칙만 엔진에 켜 두거나, SPARQL 쿼리로 추론 결과를 미리 계산해 저장해 두는 것입니다(이것을 <em>구체화</em>, materialization이라고 합니다). Graph Studio에서도 레이어 안의 쿼리 단계로 파생 사실을 만들어 두는 방식이 흔합니다.</p>
+      </aside>
+
+      <p class="summary"><span>한 줄 요약</span>온톨로지의 규칙 덕분에 기계는 적히지 않은 사실을 끌어낼 수 있다. 다만 필요한 만큼만 쓴다.</p>
+    </section>
+
+    <!-- CH5 -->
+    <section class="chapter" id="ch5">
+      <p class="ch-no">제5장</p>
+      <h3>SPARQL, 그래프에 묻는 법</h3>
+      <p class="ch-lede">SQL이 표에 묻는 언어라면, SPARQL은 그래프에 모양을 그려 보여 주며 묻는 언어입니다.</p>
+
+      <p><span class="term">SPARQL</span>의 핵심 아이디어는 <strong>패턴 맞추기</strong>입니다. 질의는 빈칸이 뚫린 트리플들로 이루어집니다. 빈칸은 <code>?name</code>처럼 물음표로 시작하는 <em>변수</em>입니다. 엔진은 그래프에서 그 모양에 꼭 맞는 부분을 모두 찾아 빈칸을 채워 돌려줍니다.</p>
+      <p>"직원의 이름과, 그 직원이 다니는 회사가 있는 도시를 알려 줘"를 SPARQL로 쓰면 아래와 같습니다. 질의의 각 줄이 그래프의 어느 부분과 맞는지 그림에서 따라가 보세요.</p>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body match">
+<pre aria-label="SPARQL 질의"><code><span class="q-line c-k">PREFIX ex: &lt;http://example.com/&gt;</span><span class="q-line"><span class="c-k">SELECT</span> ?name ?city <span class="c-k">WHERE</span> {</span><span class="q-line a-flash" style="--d:.3s">  ?p a ex:Employee ;</span><span class="q-line a-flash" style="--d:1.1s">     foaf:name ?name ;</span><span class="q-line a-flash" style="--d:1.7s">     ex:worksFor ?org .</span><span class="q-line a-flash" style="--d:2.5s">  ?org ex:locatedIn ?city .</span><span class="q-line">}</span></code></pre>
+          <svg viewBox="0 0 360 262" role="img" aria-label="직원 두 명과 고객 한 명이 있는 그래프에서 직원 패턴에 맞는 노드가 차례로 강조되는 그림">
+            <line x1="104" y1="50" x2="156" y2="50" class="e" marker-end="url(#arr)"/>
+            <line x1="244" y1="50" x2="268" y2="50" class="e" marker-end="url(#arr)"/>
+            <line x1="104" y1="140" x2="156" y2="140" class="e" marker-end="url(#arr)"/>
+            <line x1="244" y1="140" x2="268" y2="140" class="e" marker-end="url(#arr)"/>
+            <line x1="96" y1="214" x2="170" y2="68" class="e e-dash" marker-end="url(#arr)"/>
+            <text x="130" y="42" class="sm mid mono">worksFor</text>
+            <text x="256" y="32" class="sm mid mono">locatedIn</text>
+            <ellipse cx="60" cy="50" rx="44" ry="20" class="n hit a-hit" style="--d:.6s"/><text x="60" y="54" class="mid">김민지</text>
+            <ellipse cx="200" cy="50" rx="44" ry="20" class="n hit a-hit" style="--d:2s"/><text x="200" y="54" class="mid mono">ex:acme</text>
+            <ellipse cx="312" cy="50" rx="42" ry="20" class="n hit a-hit" style="--d:2.8s"/><text x="312" y="54" class="mid">서울</text>
+            <ellipse cx="60" cy="140" rx="44" ry="20" class="n hit a-hit" style="--d:.6s"/><text x="60" y="144" class="mid">박준호</text>
+            <ellipse cx="200" cy="140" rx="44" ry="20" class="n hit a-hit" style="--d:2s"/><text x="200" y="144" class="mid mono">ex:beta</text>
+            <ellipse cx="312" cy="140" rx="42" ry="20" class="n hit a-hit" style="--d:2.8s"/><text x="312" y="144" class="mid">부산</text>
+            <ellipse cx="60" cy="226" rx="44" ry="20" class="n"/><text x="60" y="230" class="mid">이소라</text>
+            <text x="60" y="80" class="sm mid">직원</text>
+            <text x="60" y="170" class="sm mid">직원</text>
+            <text x="60" y="256" class="sm mid">고객 (직원 아님)</text>
+            <text x="150" y="190" class="sm mono">buysFrom</text>
+          </svg>
+        </div>
+        <div class="tbl-wrap res">
+          <table>
+            <thead><tr><th>?name</th><th>?city</th></tr></thead>
+            <tbody>
+              <tr class="a-fade" style="--d:3.3s"><td>김민지</td><td>서울</td></tr>
+              <tr class="a-fade" style="--d:3.5s"><td>박준호</td><td>부산</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption><span><span class="fig-no">그림 5-1</span>이소라도 ACME와 연결되어 있지만 직원이 아니므로 첫 줄의 패턴에서 걸러집니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <h4>질의의 네 가지 모양</h4>
+      <ul>
+        <li><strong>SELECT</strong>: 빈칸을 채운 결과를 표로 돌려줍니다. 가장 많이 씁니다.</li>
+        <li><strong>CONSTRUCT</strong>: 결과를 <em>새 트리플</em>로 돌려줍니다. 한 모양의 그래프를 다른 모양으로 바꿀 때 씁니다.</li>
+        <li><strong>ASK</strong>: 패턴이 있는지 없는지만 참·거짓으로 답합니다.</li>
+        <li><strong>DESCRIBE</strong>: 어떤 대상에 대해 아는 것을 모두 보여 달라고 합니다.</li>
+      </ul>
+      <p>여기에 데이터를 바꾸는 <code>INSERT</code>와 <code>DELETE</code>가 더해집니다. 특히 <strong>"이런 패턴을 찾으면 저런 트리플을 만들어라"</strong>라는 <code>INSERT ... WHERE</code> 형태는 기억해 둘 만합니다. 2부에서 보겠지만 Graph Studio에서 데이터를 정제하고 공통 모델로 바꾸는 작업 대부분이 이 형태의 쿼리입니다.</p>
+      <p>이 밖에도 SQL에 있는 집계(<code>COUNT</code>, <code>SUM</code>, <code>GROUP BY</code>), 조건(<code>FILTER</code>), 있으면 가져오고 없으면 비워 두는 <code>OPTIONAL</code> 같은 기능을 대부분 갖추고 있습니다.</p>
+
+      <p class="summary"><span>한 줄 요약</span>SPARQL은 빈칸 뚫린 트리플 패턴을 그래프에 대어 보고, 맞는 부분을 찾아 채운다.</p>
+    </section>
+
+    <!-- ============ PART 2 ============ -->
+    <div class="part" id="part2">
+      <p class="part-no">2부</p>
+      <h2>Altair Graph Studio</h2>
+      <p>1부의 기초가 실제 제품 안에서 어떤 모습이 되는지 봅니다. 데이터가 들어와서 그래프가 되고, 다시 쓰일 수 있는 형태로 나가기까지의 길을 따라갑니다.</p>
+    </div>
+
+    <!-- CH6 -->
+    <section class="chapter" id="ch6">
+      <p class="ch-no">제6장</p>
+      <h3>Graph Studio는 어디서 왔나</h3>
+      <p class="ch-lede">자료를 찾다 보면 "Anzo"라는 이름이 자주 나옵니다. 같은 제품의 예전 이름입니다.</p>
+
+      <p>Altair Graph Studio의 뿌리는 미국의 <strong>Cambridge Semantics</strong>가 만든 지식 그래프 플랫폼 <strong>Anzo</strong>입니다. Anzo는 여러 시스템의 데이터를 RDF 그래프로 모으고, 온톨로지로 의미를 붙이고, 분석에 쓸 수 있게 만드는 제품이었습니다. 그 아래에서 돌아가는 그래프 데이터베이스가 <strong>AnzoGraph DB</strong>였습니다.</p>
+      <ol class="timeline">
+        <li><span class="when">Cambridge Semantics 시절</span>지식 그래프 플랫폼 Anzo와 분산 그래프 DB AnzoGraph DB를 개발</li>
+        <li><span class="when">2024년</span>시뮬레이션·데이터 분석 소프트웨어 회사 Altair가 Cambridge Semantics를 인수. Anzo는 <strong>Altair Graph Studio</strong>, AnzoGraph DB는 <strong>Altair Graph Lakehouse</strong>라는 이름으로 바뀜</li>
+        <li><span class="when">2025년</span>Altair가 Siemens에 인수되어 그 일부가 됨</li>
+      </ol>
+      <p>Altair는 Graph Studio를 데이터 분석 플랫폼(Altair RapidMiner 계열)과 함께 묶어, 흩어진 데이터를 이어 주는 <em>데이터 패브릭</em>의 핵심 부품으로 내세우고 있습니다.</p>
+
+      <aside class="note">
+        <p class="note-label">짚고 가기 · 검색할 때</p>
+        <p>기술 문서, 커뮤니티 글, 발표 자료는 아직 Anzo와 AnzoGraph라는 이름으로 된 것이 많습니다. 공부할 때는 새 이름과 옛 이름을 함께 검색하는 것이 좋습니다. 핵심 개념은 그대로 이어졌습니다.</p>
+      </aside>
+
+      <p class="summary"><span>한 줄 요약</span>Graph Studio는 Cambridge Semantics의 Anzo가 Altair로 옮겨 오며 바뀐 이름이다.</p>
+    </section>
+
+    <!-- CH7 -->
+    <section class="chapter" id="ch7">
+      <p class="ch-no">제7장</p>
+      <h3>데이터가 지나가는 길</h3>
+      <p class="ch-lede">Graph Studio를 처음 보면 메뉴가 많아 보이지만 데이터가 지나가는 순서대로 놓으면 한 줄로 정리됩니다.</p>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body">
+        <svg viewBox="0 0 680 250" role="img" aria-label="원천 데이터가 온보딩을 거쳐 그래프마트에 모이고 대시보드와 엔드포인트로 나가며, 모델이 모든 단계에 공통 언어를 제공하는 흐름도">
+          <rect x="230" y="12" width="220" height="40" rx="20" class="n-cls a-pop" style="--d:1.2s"/>
+          <text x="340" y="37" class="mid b">모델 (온톨로지)</text>
+          <g class="a-fade" style="--d:1.5s">
+            <path d="M290,52 L232,110" class="e e-dash e-acc"/>
+            <path d="M390,52 L415,110" class="e e-dash e-acc"/>
+            <path d="M450,32 C560,32 600,60 602,94" class="e e-dash e-acc"/>
+            <text x="520" y="26" class="sm">모든 단계가 같은 언어를 쓴다</text>
+          </g>
+          <g class="a-pop" style="--d:0s">
+            <rect x="20" y="96" width="92" height="24" rx="5" class="n"/><text x="66" y="112" class="mid sm">데이터베이스</text>
+            <rect x="20" y="126" width="92" height="24" rx="5" class="n"/><text x="66" y="142" class="mid sm">CSV · 엑셀</text>
+            <rect x="20" y="156" width="92" height="24" rx="5" class="n"/><text x="66" y="172" class="mid sm">문서 · API</text>
+          </g>
+          <text x="66" y="86" class="mid sm b">원천</text>
+          <g class="a-draw" style="--d:.3s;--len:60">
+            <path d="M112,108 L160,138" class="e"/><path d="M112,138 L160,138" class="e"/><path d="M112,168 L160,138" class="e"/>
+          </g>
+          <rect x="160" y="110" width="130" height="56" rx="8" class="n a-pop" style="--d:.4s"/>
+          <text x="225" y="134" class="mid b">온보딩</text><text x="225" y="153" class="mid sm">매핑 · 파이프라인</text>
+          <line x1="290" y1="138" x2="336" y2="138" class="e a-draw" marker-end="url(#arr)" style="--d:.6s;--len:50"/>
+          <rect x="340" y="110" width="150" height="56" rx="8" class="n-cls a-pop" style="--d:.7s"/>
+          <text x="415" y="134" class="mid b">그래프마트</text><text x="415" y="153" class="mid sm">레이어 · 단계</text>
+          <line x1="415" y1="166" x2="415" y2="196" class="e e-dash a-fade" style="--d:.9s"/>
+          <rect x="340" y="196" width="150" height="34" rx="8" class="n a-pop" style="--d:.9s"/>
+          <text x="415" y="218" class="mid mono">Graph Lakehouse</text>
+          <g class="a-draw" style="--d:1s;--len:60">
+            <path d="M490,138 L540,109" class="e"/><path d="M490,138 L540,138" class="e"/><path d="M490,138 L540,167" class="e"/>
+          </g>
+          <g class="a-pop" style="--d:1.1s">
+            <rect x="540" y="96" width="126" height="26" rx="5" class="n"/><text x="603" y="113" class="mid sm">대시보드</text>
+            <rect x="540" y="125" width="126" height="26" rx="5" class="n"/><text x="603" y="142" class="mid sm">SPARQL 엔드포인트</text>
+            <rect x="540" y="154" width="126" height="26" rx="5" class="n"/><text x="603" y="171" class="mid sm">Data on Demand</text>
+          </g>
+          <text x="603" y="86" class="mid sm b">활용</text>
+          <circle r="3.5" class="particle"><animateMotion dur="1.4s" repeatCount="indefinite" path="M112,108 L160,138"/></circle>
+          <circle r="3.5" class="particle"><animateMotion dur="1.4s" begin=".5s" repeatCount="indefinite" path="M112,168 L160,138"/></circle>
+          <circle r="3.5" class="particle"><animateMotion dur="1.1s" repeatCount="indefinite" path="M290,138 L338,138"/></circle>
+          <circle r="3.5" class="particle"><animateMotion dur="1.1s" begin=".55s" repeatCount="indefinite" path="M290,138 L338,138"/></circle>
+          <circle r="3.5" class="particle"><animateMotion dur="1.3s" repeatCount="indefinite" path="M490,138 L540,109"/></circle>
+          <circle r="3.5" class="particle"><animateMotion dur="1.3s" begin=".4s" repeatCount="indefinite" path="M490,138 L540,138"/></circle>
+          <circle r="3.5" class="particle"><animateMotion dur="1.3s" begin=".8s" repeatCount="indefinite" path="M490,138 L540,167"/></circle>
+        </svg>
+        </div>
+        <figcaption><span><span class="fig-no">그림 7-1</span>Graph Studio의 큰 흐름. 왼쪽에서 오른쪽으로 데이터가 흐르고, 위의 모델이 전체에 이름과 의미를 줍니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <p>예전 Anzo는 이 흐름을 <strong>Onboard</strong>(들여오기), <strong>Blend</strong>(섞기), <strong>Access</strong>(꺼내 쓰기)의 세 단계로 설명했습니다. 지금도 이 세 단어로 기억하면 편합니다.</p>
+
+      <h4>1. 연결: 데이터 소스</h4>
+      <p>먼저 원천 시스템을 등록합니다. 관계형 데이터베이스, 데이터 웨어하우스, CSV나 Parquet 같은 파일, REST API, 그리고 문서 같은 비정형 데이터까지 대상이 됩니다. 이 단계에서는 데이터를 옮기지 않고 "어디에 무엇이 있는지"만 알려 줍니다.</p>
+
+      <h4>2. 들여오기: 온보딩</h4>
+      <p>원천의 스키마(표와 컬럼 구조)를 읽어 들이면, Graph Studio는 그것을 그래프로 바꾸는 <span class="term">매핑</span>과 그 모양을 설명하는 <span class="term">모델</span>을 자동으로 만들어 줍니다. 그다음 <span class="term">파이프라인</span>을 실행하면 원천 데이터가 RDF로 변환되어 <span class="term">데이터셋</span>으로 저장됩니다. 문서 같은 비정형 데이터는 텍스트에서 사람, 회사, 날짜 같은 대상을 뽑아내는 처리를 거쳐 그래프로 들어옵니다.</p>
+
+      <h4>3. 섞기: 그래프마트</h4>
+      <p>여러 데이터셋을 한 목적 아래 모으고, 정제하고, 공통 모델에 맞춰 섞는 곳이 <span class="term">그래프마트</span>입니다. Graph Studio에서 가장 많은 일이 일어나는 곳이라 다음 장에서 따로 다룹니다.</p>
+
+      <h4>4. 꺼내 쓰기</h4>
+      <p>완성된 그래프마트는 대시보드, SPARQL 엔드포인트, 표 형태의 API 등으로 사람과 프로그램에게 제공됩니다. 11장에서 다룹니다.</p>
+
+      <aside class="note">
+        <p class="note-label">짚고 가기 · 옮겨 오기와 가상화</p>
+        <p>데이터를 들여오는 방법은 두 가지입니다. 하나는 위처럼 파이프라인으로 미리 그래프로 바꿔 저장하는 방식입니다. 다른 하나는 원천을 그대로 두고 필요할 때 직접 불러오는 방식으로, 엔진의 <strong>GDI</strong>(Graph Data Interface)가 이 역할을 합니다. 자주 쓰고 무거운 데이터는 옮겨 오고, 자주 바뀌거나 가끔 쓰는 데이터는 가상으로 연결하는 식으로 섞어 씁니다.</p>
+      </aside>
+
+      <p class="summary"><span>한 줄 요약</span>연결 → 온보딩 → 그래프마트 → 활용. 모델은 이 모든 단계의 공통 언어다.</p>
+    </section>
+
+    <!-- CH8 -->
+    <section class="chapter" id="ch8">
+      <p class="ch-no">제8장</p>
+      <h3>그래프마트와 레이어</h3>
+      <p class="ch-lede">투명 필름을 한 장씩 겹쳐 그림을 완성하듯, 그래프마트는 레이어를 쌓아 지식 그래프를 만듭니다.</p>
+
+      <p><span class="term">그래프마트</span>라는 이름은 데이터 웨어하우스의 "데이터 마트"에서 왔습니다. 데이터 마트가 특정 부서나 분석 주제를 위해 추려 놓은 데이터인 것처럼 그래프마트는 특정 목적을 위해 모아 놓은 <strong>지식 그래프</strong>입니다. "고객 360", "공급망 리스크", "임상시험 데이터 통합"처럼 질문 단위로 만듭니다.</p>
+      <p>그래프마트는 <strong>활성화</strong>해야 쓸 수 있습니다. 활성화하면 그래프마트의 내용이 Graph Lakehouse 엔진의 메모리에 올라가고, 그때부터 쿼리와 대시보드가 동작합니다.</p>
+
+      <h4>레이어: 한 장씩 쌓는 변환</h4>
+      <p>그래프마트 안은 <span class="term">레이어</span>로 나뉩니다. 각 레이어는 아래 레이어의 결과를 읽어서 무언가를 더하는데, 원본은 덮어쓰지 않고 그 위에 얹습니다.</p>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body">
+        <svg viewBox="0 0 640 300" role="img" aria-label="그래프마트 안에 네 장의 레이어가 아래부터 차례로 쌓이는 그림">
+          <text x="220" y="26" class="mid b">그래프마트</text>
+          <g class="a-drop" style="--d:0s"><polygon points="220,218 360,250 220,282 80,250" class="sheet s1"/></g>
+          <g class="a-fade" style="--d:.3s">
+            <line x1="360" y1="250" x2="390" y2="250" class="e"/>
+            <text x="398" y="246" class="b">1층 · 원천 불러오기</text><text x="398" y="264" class="sm">데이터셋을 그대로 올린다</text>
+          </g>
+          <g class="a-drop" style="--d:.5s"><polygon points="220,164 360,196 220,228 80,196" class="sheet s2"/></g>
+          <g class="a-fade" style="--d:.8s">
+            <line x1="360" y1="196" x2="390" y2="196" class="e"/>
+            <text x="398" y="192" class="b">2층 · 정제</text><text x="398" y="210" class="sm">이름 표기, 날짜 형식, 중복 정리</text>
+          </g>
+          <g class="a-drop" style="--d:1s"><polygon points="220,110 360,142 220,174 80,142" class="sheet s3"/></g>
+          <g class="a-fade" style="--d:1.3s">
+            <line x1="360" y1="142" x2="390" y2="142" class="e"/>
+            <text x="398" y="138" class="b">3층 · 공통 모델로 정렬</text><text x="398" y="156" class="sm">CRM과 ERP의 고객을 하나의 Customer로</text>
+          </g>
+          <g class="a-drop" style="--d:1.5s"><polygon points="220,56 360,88 220,120 80,88" class="sheet s4"/></g>
+          <g class="a-fade" style="--d:1.8s">
+            <line x1="360" y1="88" x2="390" y2="88" class="e"/>
+            <text x="398" y="84" class="b">4층 · 파생 지표</text><text x="398" y="102" class="sm">고객 등급, 이상 거래 점수</text>
+          </g>
+        </svg>
+        </div>
+        <figcaption><span><span class="fig-no">그림 8-1</span>레이어 구성의 한 예. 층의 개수와 역할은 그래프마트마다 자유롭게 정합니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <h4>레이어 안의 단계</h4>
+      <p>레이어 안에는 다시 <span class="term">단계</span>(step)가 순서대로 놓입니다. 대표적인 단계는 이렇습니다.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>단계</th><th>하는 일</th></tr></thead>
+          <tbody>
+            <tr><td>데이터 불러오기</td><td>온보딩으로 만든 데이터셋을 레이어에 올린다</td></tr>
+            <tr><td>직접 불러오기</td><td>파이프라인 없이 원천에서 바로 가져온다(GDI 사용)</td></tr>
+            <tr><td>쿼리</td><td>SPARQL <code>INSERT ... WHERE</code>로 새 트리플을 만든다. 정제·변환·추론의 대부분</td></tr>
+            <tr><td>검증</td><td>규칙에 어긋나는 데이터가 있는지 확인한다</td></tr>
+            <tr><td>내보내기</td><td>결과를 파일 등 바깥으로 내보낸다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>왜 굳이 층을 나누는가</h4>
+      <ul>
+        <li><strong>되돌리기 쉽다.</strong> 레이어는 켜고 끌 수 있어서 새 변환 규칙이 잘못되었으면 그 레이어만 끄면 됩니다. 원본은 그대로 남습니다.</li>
+        <li><strong>추적할 수 있다.</strong> 네임드 그래프로 출처가 남으므로 어떤 사실이 어느 레이어, 어느 단계에서 생겼는지 드러납니다.</li>
+        <li><strong>부분만 다시 돌린다.</strong> 원천이 바뀌면 전체를 다시 만들지 않고 필요한 레이어만 새로 고치면 됩니다.</li>
+        <li><strong>나눠서 일한다.</strong> 데이터 엔지니어는 아래층을, 분석가는 위층을 맡는 식으로 역할을 나눕니다.</li>
+      </ul>
+
+      <p class="summary"><span>한 줄 요약</span>그래프마트는 목적별 지식 그래프이고, 레이어를 쌓아 원본을 건드리지 않고 변환을 더한다.</p>
+    </section>
+
+    <!-- CH9 -->
+    <section class="chapter" id="ch9">
+      <p class="ch-no">제9장</p>
+      <h3>Graph Studio 안의 온톨로지</h3>
+      <p class="ch-lede">Graph Studio에서는 온톨로지를 "모델"이라고 부릅니다. 대시보드에서 고르는 항목, 쿼리를 쓸 때 뜨는 추천 목록이 모두 모델에서 나옵니다.</p>
+
+      <p>3장에서 본 클래스와 속성이 그대로 화면의 메뉴가 된다고 생각하면 됩니다. 모델은 내부적으로 OWL과 RDFS 형식으로 저장됩니다.</p>
+
+      <h4>사투리와 표준어</h4>
+      <p>Graph Studio의 모델은 두 종류입니다. 말에 빗대면 사투리와 표준어입니다.</p>
+      <p><strong>출처 모델은 사투리입니다.</strong> 시스템마다 같은 것을 다르게 부릅니다. 고객을 CRM은 <code>crm:Cust</code>, ERP는 <code>erp:CLIENT</code>라고 부르는 식입니다. 이 모델은 사람이 만들지 않습니다. 온보딩을 하면 원천 시스템의 구조를 보고 자동으로 생깁니다. 표는 클래스가, 컬럼은 속성이, 외래 키는 관계가 됩니다.</p>
+      <p><strong>공통 모델은 표준어입니다.</strong> 회사 안에서 모두가 알아듣는 이름으로 정한 모델입니다. 어느 시스템에서 왔든 고객은 <code>ex:Customer</code>, 이름은 <code>ex:name</code> 하나로 부릅니다. 이건 사람이 설계합니다. 정규 모델(canonical model)이라고도 합니다.</p>
+      <p>사투리를 표준어로 옮기는 일은 그래프마트 레이어의 쿼리 단계에서 합니다. 8장 그림의 3층이 바로 그 자리입니다. 대시보드와 분석은 표준어인 공통 모델만 보면 되므로, 원천 시스템이 몇 개든 신경 쓸 필요가 없어집니다.</p>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body">
+        <svg viewBox="0 0 640 262" role="img" aria-label="CRM 모델과 ERP 모델의 서로 다른 이름이 공통 모델의 Customer와 name으로 모이는 그림">
+          <text x="320" y="22" class="mid sm f-amb a-fade" style="--d:1.2s">레이어의 쿼리 단계 (SPARQL INSERT)</text>
+          <g class="a-pop" style="--d:0s">
+            <rect x="20" y="40" width="190" height="90" rx="8" class="n"/>
+            <text x="34" y="63" class="b">CRM에서 온 모델</text>
+            <text x="34" y="91" class="mono">crm:Cust</text><text x="34" y="117" class="mono">crm:cust_nm</text>
+          </g>
+          <g class="a-pop" style="--d:.2s">
+            <rect x="20" y="150" width="190" height="90" rx="8" class="n"/>
+            <text x="34" y="173" class="b">ERP에서 온 모델</text>
+            <text x="34" y="201" class="mono">erp:CLIENT</text><text x="34" y="227" class="mono">erp:CLNT_NAME</text>
+          </g>
+          <g class="a-pop" style="--d:.5s">
+            <rect x="430" y="80" width="190" height="110" rx="8" class="n-cls"/>
+            <text x="444" y="104" class="b">공통 모델</text>
+            <text x="444" y="137" class="mono">ex:Customer</text><text x="444" y="169" class="mono">ex:name</text>
+          </g>
+          <path d="M210,87 C320,87 320,133 426,133" class="e e-acc a-draw" marker-end="url(#arr-acc)" style="--d:.9s;--len:240"/>
+          <path d="M210,197 C320,197 320,133 426,133" class="e e-acc a-draw" marker-end="url(#arr-acc)" style="--d:1.1s;--len:240"/>
+          <path d="M210,113 C320,113 320,165 426,165" class="e e-teal a-draw" marker-end="url(#arr-teal)" style="--d:1.4s;--len:240"/>
+          <path d="M210,223 C320,223 320,165 426,165" class="e e-teal a-draw" marker-end="url(#arr-teal)" style="--d:1.6s;--len:240"/>
+          <text x="320" y="254" class="mid sm a-fade" style="--d:2s">출처마다 다른 이름이 하나의 비즈니스 이름으로 모인다</text>
+        </svg>
+        </div>
+        <figcaption><span><span class="fig-no">그림 9-1</span>출처 모델에서 공통 모델로. 대시보드와 분석은 오른쪽 공통 모델만 참조하면 됩니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <p>실제로는 아래처럼 짧은 쿼리 하나면 됩니다. 아래쪽 WHERE부터 읽으세요.</p>
+<pre class="code"><span class="c-k">INSERT</span> {
+  ?c  a        <span class="c-o">ex:Customer</span> ;
+      <span class="c-p">ex:name</span>  ?nm .
+}
+<span class="c-k">WHERE</span> {
+  ?c  a           <span class="c-s">crm:Cust</span> ;
+      <span class="c-p">crm:cust_nm</span> ?nm .
+}</pre>
+      <ul>
+        <li><strong>WHERE</strong>: CRM에서 온 고객(<code>crm:Cust</code>)과 그 이름(<code>crm:cust_nm</code>)을 찾는다.</li>
+        <li><strong>INSERT</strong>: 찾은 고객을 공통 모델의 고객(<code>ex:Customer</code>)과 이름(<code>ex:name</code>)으로 다시 적는다.</li>
+      </ul>
+      <p>ERP 고객도 같은 모양의 쿼리를 하나 더 쓰면 표준어로 모입니다.</p>
+
+      <h4>모델을 다루는 일</h4>
+      <ul>
+        <li><strong>편집:</strong> 클래스와 속성을 추가하고, 이름표와 설명을 붙입니다.</li>
+        <li><strong>가져오기:</strong> 다른 곳에서 만든 온톨로지를 OWL이나 Turtle 파일로 불러옵니다. 업계 표준(아래 표)에서 시작해도 됩니다.</li>
+        <li><strong>재사용:</strong> 공통 모델 하나를 여러 그래프마트가 같이 씁니다. 그래서 회사 어디서든 "고객"의 뜻이 같아집니다.</li>
+      </ul>
+
+      <h4>바탕으로 삼을 만한 표준 온톨로지</h4>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>이름</th><th>분야</th></tr></thead>
+          <tbody>
+            <tr><td>FIBO</td><td>금융. 금융 상품, 거래 당사자, 계약 등</td></tr>
+            <tr><td>schema.org</td><td>웹 전반. 사람, 조직, 장소, 상품, 이벤트</td></tr>
+            <tr><td>SKOS</td><td>용어 체계와 분류표(코드표, 시소러스)</td></tr>
+            <tr><td>Dublin Core</td><td>문서와 자료의 메타데이터(제목, 작성자, 날짜)</td></tr>
+            <tr><td>PROV-O</td><td>데이터의 출처와 이력</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <aside class="note">
+        <p class="note-label">짚고 가기 · 모델을 바꿀 때</p>
+        <p>쿼리, 레이어, 대시보드는 모두 모델을 기준으로 삼습니다. 클래스나 속성의 이름을 바꾸거나 지우면 그것을 쓰던 곳이 함께 깨질 수 있습니다. 공통 모델은 작은 변경이라도 영향 범위를 먼저 확인하고, 이름을 바꾸기보다 새 것을 더하고 옛 것을 단계적으로 정리하는 편이 안전합니다.</p>
+      </aside>
+
+      <p class="summary"><span>한 줄 요약</span>시스템마다 다른 사투리(출처 모델)를 표준어(공통 모델)로 옮기는 곳이 레이어다.</p>
+    </section>
+
+    <!-- CH10 -->
+    <section class="chapter" id="ch10">
+      <p class="ch-no">제10장</p>
+      <h3>엔진, Graph Lakehouse</h3>
+      <p class="ch-lede">수십억 개의 트리플을 대시보드가 기다릴 만한 시간 안에 계산하려면, 일을 나눠서 해야 합니다.</p>
+
+      <p>Graph Studio 아래에서 실제로 그래프를 저장하고 쿼리를 계산하는 것은 <strong>Altair Graph Lakehouse</strong>(옛 AnzoGraph DB)입니다. 특징을 세 단어로 줄이면 <em>분산</em>, <em>인메모리</em>, <em>분석형</em>입니다.</p>
+      <ul>
+        <li><strong>분산(MPP):</strong> 여러 서버가 클러스터를 이루고, 데이터를 나눠 가집니다. 쿼리가 들어오면 모든 서버가 자기 몫을 동시에 계산합니다.</li>
+        <li><strong>인메모리:</strong> 활성화된 그래프마트는 메모리에 올라가 있습니다. 디스크를 오가지 않으니 빠릅니다.</li>
+        <li><strong>분석형:</strong> 한 건씩 넣고 고치는 업무 처리보다, 큰 데이터를 한꺼번에 읽어 집계하고 탐색하는 일에 맞춰져 있습니다.</li>
+      </ul>
+
+      <figure class="fig" data-anim>
+        <div class="fig-body">
+        <svg viewBox="0 0 640 262" role="img" aria-label="SPARQL 쿼리를 리더 노드가 받아 네 개의 계산 노드에 나눠 주고, 각 노드가 동시에 계산한 뒤 결과가 합쳐지는 그림">
+          <rect x="250" y="14" width="140" height="36" rx="18" class="n-cls a-pop" style="--d:0s"/>
+          <text x="320" y="37" class="mid b">SPARQL 쿼리</text>
+          <line x1="320" y1="50" x2="320" y2="76" class="e a-draw" marker-end="url(#arr)" style="--d:.3s;--len:30"/>
+          <rect x="255" y="80" width="130" height="38" rx="8" class="n a-pop" style="--d:.4s"/>
+          <text x="320" y="104" class="mid b">리더 노드</text>
+          <text x="20" y="96" class="sm a-fade" style="--d:.5s">쿼리를 쪼개어</text>
+          <text x="20" y="114" class="sm a-fade" style="--d:.5s">모든 노드가 동시에 계산</text>
+          <g class="a-draw" style="--d:.7s;--len:240">
+            <line x1="300" y1="118" x2="110" y2="158" class="e" marker-end="url(#arr)"/>
+            <line x1="312" y1="118" x2="250" y2="158" class="e" marker-end="url(#arr)"/>
+            <line x1="328" y1="118" x2="390" y2="158" class="e" marker-end="url(#arr)"/>
+            <line x1="340" y1="118" x2="530" y2="158" class="e" marker-end="url(#arr)"/>
+          </g>
+          <g class="a-pop" style="--d:.9s"><rect x="55" y="162" width="110" height="70" rx="8" class="n"/><text x="110" y="183" class="mid sm b">계산 노드 1</text><text x="110" y="200" class="mid sm">데이터 1/4</text><rect x="70" y="212" width="80" height="8" rx="4" class="barbg"/></g>
+          <g class="a-pop" style="--d:.95s"><rect x="195" y="162" width="110" height="70" rx="8" class="n"/><text x="250" y="183" class="mid sm b">계산 노드 2</text><text x="250" y="200" class="mid sm">데이터 2/4</text><rect x="210" y="212" width="80" height="8" rx="4" class="barbg"/></g>
+          <g class="a-pop" style="--d:1s"><rect x="335" y="162" width="110" height="70" rx="8" class="n"/><text x="390" y="183" class="mid sm b">계산 노드 3</text><text x="390" y="200" class="mid sm">데이터 3/4</text><rect x="350" y="212" width="80" height="8" rx="4" class="barbg"/></g>
+          <g class="a-pop" style="--d:1.05s"><rect x="475" y="162" width="110" height="70" rx="8" class="n"/><text x="530" y="183" class="mid sm b">계산 노드 4</text><text x="530" y="200" class="mid sm">데이터 4/4</text><rect x="490" y="212" width="80" height="8" rx="4" class="barbg"/></g>
+          <rect x="70" y="212" width="80" height="8" rx="4" class="bar a-grow" style="--d:1.3s;--dur:1.1s"/>
+          <rect x="210" y="212" width="80" height="8" rx="4" class="bar a-grow" style="--d:1.3s;--dur:1.4s"/>
+          <rect x="350" y="212" width="80" height="8" rx="4" class="bar a-grow" style="--d:1.3s;--dur:.9s"/>
+          <rect x="490" y="212" width="80" height="8" rx="4" class="bar a-grow" style="--d:1.3s;--dur:1.25s"/>
+          <line x1="385" y1="99" x2="476" y2="99" class="e e-teal a-draw" marker-end="url(#arr-teal)" style="--d:2.8s;--len:100"/>
+          <rect x="480" y="80" width="140" height="38" rx="8" class="n-cls a-pop" style="--d:3s"/>
+          <text x="550" y="104" class="mid b">합쳐진 결과</text>
+          <text x="320" y="254" class="mid sm a-fade" style="--d:3.1s">가장 느린 노드가 끝나면 리더가 부분 결과를 모아 돌려준다</text>
+        </svg>
+        </div>
+        <figcaption><span><span class="fig-no">그림 10-1</span>MPP(대규모 병렬 처리) 방식. 서버를 늘리면 한 번에 처리할 수 있는 데이터도 늘어납니다.</span><button class="replay">다시 보기</button></figcaption>
+      </figure>
+
+      <h4>알아 두면 좋은 기능</h4>
+      <ul>
+        <li><strong>표준 SPARQL 1.1</strong>을 지원하고, 여기에 분석용 함수와 그래프 알고리즘(최단 경로, 중심성 등) 같은 확장이 더해져 있습니다.</li>
+        <li><strong>RDF-star</strong>를 지원해 "민지가 ACME에서 일한다"라는 관계 자체에 "2021년부터"처럼 속성을 붙일 수 있습니다. 속성 그래프의 장점을 RDF 안으로 가져온 기능입니다.</li>
+        <li><strong>GDI</strong>(Graph Data Interface)로 쿼리 안에서 외부 데이터베이스, 파일, API를 불러옵니다. 7장의 "가상화"가 이것입니다.</li>
+      </ul>
+
+      <aside class="note">
+        <p class="note-label">짚고 가기 · 메모리가 곧 용량</p>
+        <p>인메모리 엔진이라 클러스터의 메모리 크기가 동시에 활성화할 수 있는 그래프마트의 크기를 정합니다. 그래프마트를 목적별로 알맞게 나누고, 쓰지 않는 그래프마트는 비활성화해 두는 것이 운영의 기본 습관입니다.</p>
+      </aside>
+
+      <p class="summary"><span>한 줄 요약</span>Graph Lakehouse는 데이터를 여러 서버의 메모리에 나눠 두고 쿼리를 병렬로 계산하는 분석형 그래프 엔진이다.</p>
+    </section>
+
+    <!-- CH11 -->
+    <section class="chapter" id="ch11">
+      <p class="ch-no">제11장</p>
+      <h3>그래프 활용하기</h3>
+      <p class="ch-lede">지식 그래프는 만든 뒤에 써야 의미가 있습니다. Graph Studio는 사람과 프로그램이 각각 쓰기 좋은 방법을 제공합니다.</p>
+
+      <div class="access">
+        <div><b>Hi-Res Analytics</b><p>그래프마트 위에서 바로 만드는 대시보드. 모델의 클래스와 속성을 골라 표, 차트, 필터를 구성합니다. SPARQL을 몰라도 됩니다.</p></div>
+        <div><b>SPARQL 엔드포인트</b><p>프로그램이나 노트북 환경에서 그래프마트에 SPARQL로 직접 질의합니다. 데이터 과학자가 주로 씁니다.</p></div>
+        <div><b>Data on Demand</b><p>그래프의 내용을 표 형태의 API(OData 등)로 내놓습니다. Tableau나 Power BI 같은 BI 도구가 일반 데이터 소스처럼 붙을 수 있습니다.</p></div>
+        <div><b>내보내기와 API</b><p>결과를 파일로 내보내거나 API로 다른 시스템에 넘깁니다. 머신러닝 학습 데이터로도 쓰입니다.</p></div>
+      </div>
+
+      <p>여기서도 모델이 중심에 있습니다. 대시보드의 필드 목록도, Data on Demand가 만드는 표의 컬럼도 공통 모델의 클래스와 속성에서 나옵니다. 그래서 공통 모델을 잘 설계해 두면, 분석가는 원천 시스템의 복잡한 구조를 몰라도 "고객", "주문", "제품"이라는 익숙한 이름으로 데이터를 다룰 수 있습니다.</p>
+
+      <p class="summary"><span>한 줄 요약</span>대시보드, SPARQL, 표 형태 API, 내보내기. 쓰는 방법은 달라도 모두 같은 공통 모델을 기준으로 한다.</p>
+    </section>
+
+    <!-- ============ PART 3 ============ -->
+    <div class="part" id="part3">
+      <p class="part-no">3부</p>
+      <h2>정리</h2>
+      <p>배운 것을 실제로 쓸 때 도움이 되는 습관과, 다시 찾아볼 용어들입니다.</p>
+    </div>
+
+    <!-- CH12 -->
+    <section class="chapter" id="ch12">
+      <p class="ch-no">제12장</p>
+      <h3>좋은 온톨로지의 습관</h3>
+      <p class="ch-lede">온톨로지 설계에 정답은 없지만, 오래 쓰이는 온톨로지에는 공통된 습관이 있습니다.</p>
+
+      <ol class="habits">
+        <li><div><b>질문에서 시작한다.</b> "이 그래프로 어떤 질문에 답하고 싶은가?"를 먼저 적습니다. 이것을 <em>역량 질문</em>(competency question)이라고 합니다. "어느 공급사가 멈추면 어떤 제품 생산이 늦어지는가?" 같은 질문이 정해지면 필요한 클래스와 속성이 자연스럽게 드러납니다.</div></li>
+        <li><div><b>비즈니스의 말로 이름 짓는다.</b> 원천 시스템의 컬럼명 대신 현업이 실제로 쓰는 말을 씁니다. 규칙도 정해 둡니다. 흔히 클래스는 단수 명사에 대문자로 시작하고(<code>Customer</code>), 속성은 소문자로 시작하는 동사나 명사구(<code>worksFor</code>, <code>birthDate</code>)로 씁니다.</div></li>
+        <li><div><b>있는 것을 먼저 찾는다.</b> 9장의 표준 온톨로지처럼 이미 잘 정의된 어휘가 있으면 가져다 씁니다. 바깥 세계와 연결하기도 쉬워집니다.</div></li>
+        <li><div><b>모든 것을 모델링하지 않는다.</b> 세상을 완벽히 그리려는 순간 온톨로지는 끝나지 않습니다. 지금의 질문에 필요한 만큼만 만들고, 필요가 생기면 넓힙니다. 온톨로지는 문장을 더하면 확장된다는 장점이 있습니다.</div></li>
+        <li><div><b>클래스, 속성, 값을 구분한다.</b> "빨간 자동차"를 위해 <code>RedCar</code> 클래스를 만들기보다 <code>color</code> 속성에 값을 주는 것이 보통 맞습니다. 클래스는 "무엇인가", 속성은 "어떤가, 무엇과 이어지는가"를 나타냅니다.</div></li>
+        <li><div><b>레이블과 설명을 붙인다.</b> <code>rdfs:label</code>에 사람이 읽는 이름을, <code>rdfs:comment</code>에 정의를 적습니다. <code>"고객"@ko</code>, <code>"Customer"@en</code>처럼 여러 언어로 붙이면 화면에도 그대로 쓰입니다.</div></li>
+        <li><div><b>작게 나누고 버전을 관리한다.</b> 고객, 제품, 조직처럼 주제별로 모듈을 나누면 바꿀 때 영향이 적습니다. 공통 모델의 변경은 기록을 남기고, 9장에서 본 것처럼 쓰는 곳을 먼저 확인합니다.</div></li>
+      </ol>
+
+      <p class="summary"><span>한 줄 요약</span>질문에서 시작해, 필요한 만큼, 비즈니스의 말로, 재사용하며 만든다.</p>
+    </section>
+
+    <!-- CH13 -->
+    <section class="chapter" id="ch13">
+      <p class="ch-no">제13장</p>
+      <h3>용어집</h3>
+      <p class="ch-lede">책에 나온 말을 한곳에 모았습니다. 본문에서 점선 밑줄이 그어진 단어에 마우스를 올리면 뜻이 보이고, 누르면 여기로 옵니다. 여기서 용어 제목을 다시 누르면 읽던 자리로 돌아갑니다.</p>
+
+      <dl class="gloss" id="gloss"></dl>
+    </section>
+
+    <!-- OUTRO -->
+    <section class="chapter" id="outro">
+      <p class="ch-no">마치며</p>
+      <h3>참고 자료</h3>
+      <p>여기까지 왔다면 지식 그래프가 무엇이고, 온톨로지가 왜 필요하며, Graph Studio가 그 둘을 어떻게 제품으로 엮었는지 큰 그림이 잡혔을 것입니다. 더 깊이 들어가고 싶다면 아래를 권합니다.</p>
+      <ul>
+        <li><a href="https://www.w3.org/TR/rdf11-primer/">RDF 1.1 Primer</a>: W3C의 RDF 입문서. 2장의 내용을 더 자세히 다룹니다.</li>
+        <li><a href="https://www.w3.org/TR/owl2-primer/">OWL 2 Primer</a>: OWL로 무엇을 표현할 수 있는지 예제로 설명합니다.</li>
+        <li><a href="https://www.w3.org/TR/sparql11-query/">SPARQL 1.1 Query Language</a>: SPARQL 공식 명세. 예제가 많아 사전처럼 쓰기 좋습니다.</li>
+        <li><a href="https://www.w3.org/TR/shacl/">SHACL</a>: 그래프 데이터 검증 표준.</li>
+        <li><strong>Altair Graph Studio 공식 문서</strong>: 사용 중인 버전의 문서로 메뉴와 기능을 확인하세요. 옛 Anzo 문서도 개념 이해에 도움이 됩니다.</li>
+      </ul>
+      <p class="endnote">가볍게 읽는 Graph Studio · 2026년 10월 작성. 제품 이름과 기능 설명은 작성 시점의 공개 정보를 바탕으로 했으며, 버전에 따라 다를 수 있습니다.</p>
+    </section>
+
+  </div>
+  </main>
+</div>
+
+<script>
+/* 용어집: 단일 데이터 원천. 13장 목록, 본문 자동 링크, 툴팁이 모두 여기서 나온다. */
+var GLOSSARY = [
+  /* ---------- 기초 개념 ---------- */
+  {id:'g-graphdb', group:'base', term:'그래프 DB', en:'Graph Database', ch:'1장',
+   aliases:['그래프 데이터베이스','그래프 DB'],
+   short:'데이터를 표가 아니라 점(노드)과 선(관계)으로 저장하는 데이터베이스.',
+   body:'<p>데이터를 표가 아니라 점(노드)과 선(관계)으로 저장하는 데이터베이스입니다. 크게 속성 그래프 계열과 RDF 계열이 있고, Graph Studio는 RDF 계열입니다.</p>'},
+  {id:'g-w3c', group:'base', term:'W3C', en:'World Wide Web Consortium', ch:'1장',
+   aliases:['W3C'],
+   short:'웹 기술 표준을 정하는 국제 기구. RDF, OWL, SPARQL 같은 표준을 만든 곳.',
+   body:'<p><strong>웹 기술 표준을 정하는 국제 기구</strong>입니다. HTML, CSS도 여기서 정했습니다. 온톨로지 쪽에서는 RDF, OWL, SPARQL 같은 표준을 만든 곳입니다.</p><p>"W3C 표준이다"라는 말은 <strong>특정 회사 제품이 아니라 누구나 쓰는 공통 규격</strong>이라는 뜻입니다.</p>'},
+  {id:'g-rdf', group:'base', term:'RDF', en:'Resource Description Framework', ch:'2장',
+   aliases:['RDF'],
+   short:'그래프 데이터를 저장하는 W3C 표준 형식. 모든 데이터를 트리플(주어–술어–목적어) 한 줄로 표현한다.',
+   body:'<p><strong>그래프 데이터를 저장하는 표준 형식</strong>입니다. W3C가 정했습니다. 모든 데이터를 <strong>트리플(주어–술어–목적어)</strong> 한 줄로 표현합니다.</p><pre class="code">&lt;직원/홍길동&gt;  &lt;소속&gt;  &lt;부서/개발팀&gt;\n&lt;직원/홍길동&gt;  &lt;이름&gt;  "홍길동"</pre>'},
+  {id:'g-triple', group:'base', term:'트리플', en:'Triple', ch:'2장',
+   aliases:['트리플'],
+   short:'RDF에서 데이터를 표현하는 최소 단위. 주어–술어–목적어 "세 개짜리 묶음".',
+   body:'<p><strong>RDF에서 데이터를 표현하는 최소 단위</strong>로, "세 개짜리 묶음"이라는 뜻입니다.</p><pre class="code">주어 (Subject)  –  술어 (Predicate)  –  목적어 (Object)\n홍길동           –  소속               –  개발팀</pre>'},
+  {id:'g-iri', group:'base', term:'IRI', en:'Internationalized Resource Identifier', ch:'2장',
+   aliases:['IRI'],
+   short:'웹 주소 형태의 전역 식별자. 사물과 관계에 겹치지 않는 이름을 준다.',
+   body:'<p>웹 주소 형태의 전역 식별자입니다. <code>http://example.com/minji</code>처럼 쓰고, 보통 <code>ex:minji</code>처럼 접두어로 줄여 씁니다. 도메인이 다르면 이름이 겹치지 않아 여러 출처를 합치기 쉽습니다.</p>'},
+  {id:'g-literal', group:'base', term:'리터럴', en:'Literal', ch:'2장',
+   aliases:['리터럴'],
+   short:'문자열, 숫자, 날짜 같은 값. 자료형과 언어 태그를 붙일 수 있다.',
+   body:'<p>문자열, 숫자, 날짜 같은 값입니다. <code>"2026-10-26"^^xsd:date</code>처럼 자료형을, <code>"김민지"@ko</code>처럼 언어 태그를 붙일 수 있습니다.</p>'},
+  {id:'g-turtle', group:'base', term:'Turtle', en:'Terse RDF Triple Language', ch:'2장',
+   aliases:['Turtle'],
+   short:'사람이 읽기 쉬운 RDF 파일 형식.',
+   body:'<p>트리플을 파일에 적는 형식 가운데 사람이 읽기 가장 편한 형식입니다. 세미콜론(;)은 같은 주어로 계속, 마침표(.)는 문장 끝을 뜻합니다.</p>'},
+  {id:'g-named', group:'base', term:'네임드 그래프', en:'Named Graph', ch:'2장',
+   aliases:['네임드 그래프'],
+   short:'이름을 붙인 트리플 묶음. 출처와 버전을 구분할 때 쓴다.',
+   body:'<p>트리플을 묶고 그 묶음에 이름을 붙인 것입니다. "이 트리플들은 CRM에서 왔다"처럼 출처와 버전을 구분할 때 씁니다. Graph Studio의 데이터셋과 레이어도 이런 묶음 위에서 동작합니다.</p>'},
+  {id:'g-ontology', group:'base', term:'온톨로지', en:'Ontology', ch:'3장',
+   aliases:['온톨로지'],
+   short:'특정 분야에 존재하는 개념들과 그 관계를 컴퓨터가 이해할 수 있게 명시적으로 정의한 것.',
+   body:'<p>원래는 <strong>철학 용어</strong>로 "존재론", 즉 "무엇이 존재하고 그것들은 어떻게 분류되는가"를 다루는 학문입니다. IT에서는 이를 빌려 와 <strong>"특정 분야(도메인)에 존재하는 개념들과 그 관계를 컴퓨터가 이해할 수 있게 명시적으로 정의한 것"</strong>이라는 뜻으로 씁니다.</p><ul><li>사람은 <code>고객</code>, <code>거래처</code>, <code>Customer</code>, <code>CUST_CD</code>가 같은 것을 가리킨다는 걸 알지만, 컴퓨터는 모릅니다.</li><li>온톨로지는 "이것들은 모두 <code>고객</code>이라는 같은 개념이다", "<code>고객</code>은 <code>주문</code>을 한다", "<code>VIP고객</code>은 <code>고객</code>의 한 종류다"처럼 <strong>의미를 명시해서 컴퓨터도 이해하게 만드는 것</strong>입니다.</li></ul>'},
+  {id:'g-class', group:'base', term:'클래스 · 속성 · 개체', en:'Class · Property · Individual', ch:'3장',
+   aliases:['클래스'],
+   short:'온톨로지의 세 재료. 사물의 종류, 관계와 특징, 실제 대상.',
+   body:'<p>온톨로지의 세 재료입니다. <strong>클래스</strong>는 사물의 종류(사람, 회사), <strong>속성</strong>은 관계나 특징(일한다, 이름), <strong>개체</strong>는 클래스에 속하는 실제 대상(김민지, ACME)입니다. 개체는 인스턴스라고도 합니다.</p>'},
+  {id:'g-tbox', group:'base', term:'TBox · ABox', en:'Terminological · Assertional Box', ch:'3장',
+   aliases:['TBox','ABox'],
+   short:'클래스와 속성의 정의(설계도)와 실제 개체에 대한 사실(데이터).',
+   body:'<p>클래스와 속성의 정의를 TBox(용어 상자), 실제 개체에 대한 사실을 ABox(단언 상자)라고 부릅니다. 둘 다 트리플로 적혀 같은 곳에 저장됩니다.</p>'},
+  {id:'g-rdfs', group:'base', term:'RDFS · OWL', en:'RDF Schema · Web Ontology Language', ch:'3장',
+   aliases:['RDFS','OWL'],
+   short:'온톨로지를 적는 W3C 표준 어휘. OWL이 더 풍부한 규칙을 표현한다.',
+   body:'<p>온톨로지를 적는 W3C 표준 어휘입니다. RDFS는 클래스, 하위 클래스, 도메인, 범위 같은 기본 어휘를, OWL은 동치, 서로소, 개수 제약, 역관계, 전이 같은 더 풍부한 규칙을 제공합니다.</p>'},
+  {id:'g-owa', group:'base', term:'열린 세계 가정', en:'Open World Assumption', ch:'3장',
+   aliases:['열린 세계 가정'],
+   short:'적혀 있지 않은 것은 거짓이 아니라 아직 모르는 것으로 본다.',
+   body:'<p>데이터에 적혀 있지 않은 것을 "없다"가 아니라 "아직 모른다"로 보는 태도입니다. 여러 출처가 계속 합쳐지는 환경에 맞습니다. 반드시 있어야 하는 값을 검사하려면 SHACL 같은 검증 규칙이 따로 필요합니다.</p>'},
+  {id:'g-shacl', group:'base', term:'SHACL', en:'Shapes Constraint Language', ch:'3장',
+   aliases:['SHACL'],
+   short:'RDF 지식 그래프의 데이터가 정해진 구조 규칙(Shape)을 지키는지 자동으로 검증하는 W3C 표준 언어.',
+   body:'<p>RDF 지식 그래프의 데이터가 정해진 구조 규칙(Shape)을 지키는지 자동으로 검증하는 W3C 표준 언어입니다.</p>'},
+  {id:'g-inference', group:'base', term:'추론', en:'Inference', ch:'4장',
+   aliases:['추론'],
+   short:'온톨로지 규칙으로 데이터에 적히지 않은 사실을 끌어내는 것.',
+   body:'<p>온톨로지의 규칙에서 새 사실을 끌어내는 것입니다. "민지는 직원", "직원은 사람의 하위 클래스"에서 "민지는 사람"을 알아내는 식입니다.</p>'},
+  {id:'g-material', group:'base', term:'구체화', en:'Materialization', ch:'4장',
+   aliases:['구체화','materialization'],
+   short:'추론 결과를 미리 계산해 트리플로 저장해 두는 것.',
+   body:'<p>추론 결과를 쿼리할 때마다 계산하지 않고, 미리 계산해 트리플로 저장해 두는 방식입니다. Graph Studio에서는 레이어의 쿼리 단계로 자주 합니다.</p>'},
+  {id:'g-sparql', group:'base', term:'SPARQL', en:'SPARQL Protocol and RDF Query Language', ch:'5장',
+   aliases:['SPARQL'],
+   short:'RDF 데이터를 조회하는 표준 쿼리 언어. RDB의 SQL에 해당한다.',
+   body:'<p>RDF 데이터를 조회하는 표준 쿼리 언어입니다. RDB의 SQL에 해당합니다.</p><pre class="code">SELECT ?이름 ?부서   # ?가 붙은 것은 변수\nWHERE {\n  ?직원 &lt;소속&gt; ?부서 .\n  ?직원 &lt;이름&gt; ?이름 .\n}</pre>'},
+  {id:'g-cq', group:'base', term:'CQ (역량 질문)', en:'Competency Question', ch:'12장',
+   aliases:['역량 질문','competency question'],
+   short:'"이 온톨로지가 완성되면 답할 수 있어야 하는 업무 질문". 온톨로지 설계·검증 방법.',
+   body:'<p>"이 온톨로지가 완성되면 답할 수 있어야 하는 업무 질문"으로, 1995년 Grüninger &amp; Fox가 제시한 온톨로지 설계·검증 방법입니다. 예를 들어 "이 Spec을 참조하는 SOP는 무엇인가?" 같은 질문을 현업이 먼저 정하고, 그 질문에 답할 수 있도록 클래스와 관계를 설계합니다.</p><p>이후 질문을 SPARQL로 바꿔 그래프에 실행해서 답이 나오지 않으면 필요한 관계가 빠졌다고 판단합니다. 개발로 치면 테스트 케이스를 먼저 쓰는 TDD와 비슷합니다. SHACL이 데이터 형식이 맞는지를 검사한다면, CQ는 온톨로지가 실제 업무에 쓸모 있는지를 검증합니다.</p><div class="tbl-wrap"><table><thead><tr><th>TDD</th><th>CQ-Driven</th></tr></thead><tbody><tr><td>테스트 케이스를 먼저 작성</td><td>업무 질문(CQ)을 먼저 정의</td></tr><tr><td>테스트를 통과하도록 코드 작성</td><td>질문에 답하도록 클래스·관계 설계</td></tr><tr><td>테스트 실패 = 버그</td><td>CQ 미응답 = 관계 누락</td></tr></tbody></table></div>'},
+
+  /* ---------- Graph Studio ---------- */
+  {id:'g-anzo', group:'gs', term:'Anzo', en:'', ch:'6장',
+   aliases:['Anzo'],
+   short:'Graph Studio의 옛 이름. Cambridge Semantics가 개발했다.',
+   body:'<p>제품의 옛 이름입니다. Cambridge Semantics가 개발했고, Altair가 인수한 뒤 Altair Graph Studio로 이름이 바뀌었습니다. 문서와 커뮤니티 자료에는 아직 이 이름이 많이 남아 있습니다.</p>'},
+  {id:'g-datasource', group:'gs', term:'데이터 소스', en:'Data Source', ch:'7장',
+   aliases:['데이터 소스'],
+   short:'Graph Studio에 등록한 원천 시스템. 데이터베이스, 파일, API 등.',
+   body:'<p>Graph Studio에 등록한 원천 시스템입니다. 이 단계에서는 데이터를 옮기지 않고 어디에 무엇이 있는지만 알려 줍니다.</p>'},
+  {id:'g-onboarding', group:'gs', term:'온보딩', en:'Onboarding', ch:'7장',
+   aliases:['온보딩'],
+   short:'원천 데이터를 읽어 매핑과 모델을 만들고 그래프로 들여오는 과정.',
+   body:'<p>원천의 스키마를 읽어 그래프로 바꾸는 매핑과 모델을 만들고, 파이프라인으로 데이터를 들여오는 과정입니다. 예전 Anzo에서는 Onboard 단계라고 불렀습니다.</p>'},
+  {id:'g-pipeline', group:'gs', term:'파이프라인', en:'Pipeline', ch:'7장',
+   aliases:['파이프라인'],
+   short:'원천 데이터를 RDF로 변환해 데이터셋으로 저장하는 작업.',
+   body:'<p>원천 데이터를 RDF로 변환해 데이터셋으로 저장하는 작업입니다.</p>'},
+  {id:'g-dataset', group:'gs', term:'데이터셋', en:'Dataset', ch:'7장',
+   aliases:['데이터셋'],
+   short:'파이프라인이 만든 그래프 데이터. 그래프마트에 올려 쓴다.',
+   body:'<p>파이프라인이 만든 그래프 데이터입니다. 그래프마트의 데이터 불러오기 단계로 올려 씁니다.</p>'},
+  {id:'g-model', group:'gs', term:'모델', en:'Model', ch:'9장',
+   aliases:['출처 모델','공통 모델'],
+   short:'Graph Studio에서 온톨로지를 부르는 이름. 자동 생성되는 출처 모델과 사람이 설계하는 공통 모델이 있다.',
+   body:'<p>Graph Studio에서 온톨로지를 부르는 이름입니다. 온보딩 때 원천 스키마에서 자동으로 생기는 <strong>출처 모델</strong>과, 비즈니스 언어로 설계하는 <strong>공통 모델</strong>(정규 모델)이 있습니다. 대시보드 필드와 쿼리 도우미가 모두 모델에서 나옵니다.</p>'},
+  {id:'g-graphmart', group:'gs', term:'그래프마트', en:'Graphmart', ch:'8장',
+   aliases:['그래프마트'],
+   short:'특정 목적을 위해 데이터셋을 모아 만든 지식 그래프. 활성화하면 엔진 메모리에 올라간다.',
+   body:'<p>"고객 360"처럼 특정 목적을 위해 데이터셋을 모아 만든 지식 그래프입니다. 데이터 웨어하우스의 데이터 마트에서 이름을 따 왔습니다. 활성화하면 Graph Lakehouse 엔진의 메모리에 올라갑니다.</p>'},
+  {id:'g-layer', group:'gs', term:'레이어 (Data Layer)', en:'Data Layer · Step', ch:'8장',
+   aliases:['Data Layer','레이어'],
+   short:'그래프마트 안에서 데이터를 쌓는 층. 각 레이어는 여러 단계(step)로 이루어진다.',
+   body:'<p>그래프마트 안에서 데이터를 쌓는 층입니다. 레이어 안에는 데이터 불러오기, 쿼리, 검증, 내보내기 같은 단계(step)가 순서대로 놓입니다. 레이어는 켜고 끌 수 있어 원본을 건드리지 않고 변환을 실험할 수 있습니다.</p>'},
+  {id:'g-lakehouse', group:'gs', term:'Graph Lakehouse', en:'옛 이름 AnzoGraph', ch:'10장',
+   aliases:['Graph Lakehouse','AnzoGraph DB','AnzoGraph'],
+   short:'그래프 데이터를 메모리에 올려서 SPARQL 쿼리를 처리하는 그래프 DB 엔진. 예전 이름은 AnzoGraph.',
+   body:'<p><strong>그래프 데이터를 메모리에 올려서 SPARQL 쿼리를 처리하는 그래프 DB 엔진</strong>입니다. 예전 이름은 <strong>AnzoGraph</strong>이고, 표준 용어로는 <strong>트리플스토어(RDF 그래프 DB)</strong>입니다.</p><ul><li>그래프마트를 활성화하면 데이터가 이 엔진에 올라갑니다.</li><li>여러 서버가 데이터를 나눠 갖고 쿼리를 병렬로 계산합니다(MPP).</li></ul>'},
+  {id:'g-mpp', group:'gs', term:'MPP', en:'Massively Parallel Processing', ch:'10장',
+   aliases:['MPP'],
+   short:'대규모 병렬 처리. 여러 서버가 데이터를 나눠 갖고 동시에 계산한다.',
+   body:'<p>대규모 병렬 처리입니다. 쿼리를 여러 서버에 나눠 동시에 계산하고 결과를 합칩니다. 서버를 늘리면 처리할 수 있는 데이터도 늘어납니다.</p>'},
+  {id:'g-rdfstar', group:'gs', term:'RDF-star', en:'', ch:'10장',
+   aliases:['RDF-star'],
+   short:'관계 자체에 속성을 붙일 수 있게 RDF를 확장한 것.',
+   body:'<p>"민지가 ACME에서 일한다"라는 관계 자체에 "2021년부터" 같은 속성을 붙일 수 있게 RDF를 확장한 것입니다. 속성 그래프의 장점을 RDF로 가져온 기능입니다.</p>'},
+  {id:'g-gdi', group:'gs', term:'GDI', en:'Graph Data Interface', ch:'7장, 10장',
+   aliases:['GDI','Graph Data Interface'],
+   short:'쿼리 안에서 외부 데이터베이스, 파일, API를 직접 불러오는 기능.',
+   body:'<p>쿼리 안에서 외부 데이터베이스, 파일, API를 직접 불러오는 기능입니다. 데이터를 미리 옮기지 않고 가상으로 연결할 때 씁니다.</p>'},
+  {id:'g-hires', group:'gs', term:'Hi-Res Analytics', en:'', ch:'11장',
+   aliases:['Hi-Res Analytics'],
+   short:'그래프 데이터로 대시보드를 만드는 BI 화면. 쿼리를 몰라도 시각적으로 탐색할 수 있다.',
+   body:'<p>그래프 데이터로 대시보드를 만드는 BI 화면입니다.</p><ul><li>필터, 표, 차트(Lens)를 드래그로 구성합니다.</li><li>쿼리를 몰라도 그래프 데이터를 시각적으로 탐색할 수 있습니다.</li></ul>'},
+  {id:'g-qb', group:'gs', term:'Query Builder', en:'', ch:'',
+   aliases:['Query Builder'],
+   short:'SPARQL 쿼리를 작성하고 실행하는 화면.',
+   body:'<p>SPARQL 쿼리를 작성하고 실행하는 화면입니다.</p>'},
+  {id:'g-dod', group:'gs', term:'Data on Demand', en:'', ch:'11장',
+   aliases:['Data on Demand'],
+   short:'그래프 데이터를 표 형태 API(OData 등)로 제공해 BI 도구가 쓰게 하는 기능.',
+   body:'<p>그래프 데이터를 표 형태의 API(OData 등)로 제공하는 기능입니다. Tableau나 Power BI 같은 BI 도구가 일반 데이터 소스처럼 붙을 수 있습니다.</p>'},
+
+  /* ---------- 더 넓게 보기 ---------- */
+  {id:'g-palantir', group:'wide', term:'Palantir (팔란티어)', en:'', ch:'',
+   aliases:['Palantir','팔란티어'],
+   short:'미국의 데이터 분석 소프트웨어 회사. 정부·국방 분석으로 시작해 기업 데이터 플랫폼으로 넓혔다.',
+   body:'<p><strong>미국의 데이터 분석 소프트웨어 회사</strong>입니다. 정부·국방·정보기관용 분석으로 시작해서, 지금은 대기업 데이터 플랫폼으로 영역을 넓혔습니다.</p><p>주요 제품</p><ul><li><strong>Gotham</strong>: 정부·국방용 분석 플랫폼</li><li><strong>Foundry</strong>: 기업용 데이터 통합·운영 플랫폼</li><li><strong>AIP</strong>: Foundry 위에서 LLM을 업무에 연결하는 AI 플랫폼</li></ul>'},
+  {id:'g-foundry', group:'wide', term:'Foundry Ontology', en:'', ch:'',
+   aliases:['Foundry Ontology'],
+   short:'Palantir Foundry 안에서 회사의 업무를 디지털로 모델링한 계층.',
+   body:'<p><strong>Palantir Foundry 안에서 회사의 업무를 디지털로 모델링한 계층</strong>입니다. 구성 요소는 이렇습니다.</p><ul><li><strong>Object</strong>: 업무 객체 (공장, 설비, 주문, 직원)</li><li><strong>Link</strong>: 객체 간 관계</li><li><strong>Action</strong>: 객체에 대해 할 수 있는 업무 행동 (주문 승인, 설비 점검 요청)</li><li><strong>Function</strong>: 비즈니스 로직</li></ul>'},
+  {id:'g-rag', group:'wide', term:'RAG', en:'Retrieval-Augmented Generation, 검색 증강 생성', ch:'',
+   aliases:['RAG'],
+   short:'LLM이 답하기 전에 관련 자료를 먼저 검색해서, 그 자료를 근거로 답하게 하는 방식.',
+   body:'<p>LLM이 답하기 전에 관련 자료를 먼저 검색해서, 그 자료를 근거로 답하게 하는 방식입니다. LLM의 한계는 이렇습니다.</p><ul><li>회사 내부 데이터는 학습하지 않았기 때문에 모릅니다.</li><li>모르는 내용도 그럴듯하게 지어냅니다(환각).</li></ul><p>RAG의 흐름은 다음과 같습니다.</p><pre class="code">질문 → 사내 문서에서 관련 내용 검색 → [질문 + 검색 결과]를 LLM에 전달 → 근거 있는 답변</pre><p>일반적인 RAG는 문서를 잘게 쪼개 <strong>벡터(의미를 숫자로 표현한 값)</strong>로 저장해 두고, 질문과 <strong>의미가 비슷한 문단</strong>을 찾아옵니다. 이를 <strong>벡터 RAG</strong>라고 부릅니다.</p>'},
+  {id:'g-graphrag', group:'wide', term:'GraphRAG', en:'', ch:'',
+   aliases:['GraphRAG'],
+   short:'검색 대상을 문서 조각이 아니라 지식 그래프로 바꾼 RAG.',
+   body:'<p><strong>검색 대상을 문서 조각이 아니라 지식 그래프로 바꾼 RAG</strong>입니다.</p>'},
+  {id:'g-why', group:'wide', term:'왜 온톨로지가 다시 주목받나', en:'', ch:'',
+   aliases:[],
+   short:'온톨로지가 정확한 근거를, LLM이 자연어 인터페이스를 맡는 조합이 주목받고 있다.',
+   body:'<p>LLM이 등장한 뒤 기업들이 공통으로 겪는 문제가 <strong>"AI가 우리 회사 데이터를 정확하게 이해하고 답하게 하려면 어떻게 해야 하나"</strong>입니다. 그래서 <strong>온톨로지가 정확한 근거를 제공하고, LLM이 자연어 인터페이스를 맡는</strong> 조합이 주목받고 있습니다. 온톨로지가 "AI 시대의 데이터 기반"으로 다시 이야기되는 이유가 이것입니다.</p>'}
+];
+var GLOSSARY_GROUPS = [['base','기초 개념'],['gs','Graph Studio'],['wide','더 넓게 보기']];
+
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var byId = {}; GLOSSARY.forEach(function(g){ byId[g.id] = g; });
+
+  /* 1) 13장 용어집 렌더 */
+  var dl = document.getElementById('gloss');
+  GLOSSARY_GROUPS.forEach(function(gr){
+    var head = document.createElement('div'); head.className = 'grp'; head.textContent = gr[1]; dl.appendChild(head);
+    GLOSSARY.filter(function(g){ return g.group === gr[0]; }).forEach(function(g){
+      var dt = document.createElement('dt'); dt.id = g.id;
+      dt.innerHTML = '<span class="gt">' + g.term + '</span><span class="ret" aria-hidden="true">↩ 읽던 곳으로</span>' + (g.en ? '<small>' + g.en + '</small>' : '');
+      var dd = document.createElement('dd');
+      dd.innerHTML = g.body + (g.ch ? '<p class="ref">본문: ' + g.ch + '</p>' : '');
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+  });
+
+  /* 2) 본문 자동 링크: 장마다 처음 나오는 표기 하나만 */
+  var ALIASES = [];
+  GLOSSARY.forEach(function(g){ g.aliases.forEach(function(a){ ALIASES.push([a, g.id]); }); });
+  ALIASES.sort(function(x, y){ return y[0].length - x[0].length; });
+  var SKIP = 'pre,code,h1,h2,h3,h4,svg,figcaption,th,a,button,.ch-no,.part-no,.eyebrow,.summary > span,.note-label,.meta,.gloss,#ch13';
+  var WORD = /[A-Za-z0-9_\-]/;
+  function boundaryOK(text, i, alias){
+    if (!/^[A-Za-z]/.test(alias)) return true;
+    var prev = text.charAt(i - 1), next = text.charAt(i + alias.length);
+    return !(prev && WORD.test(prev)) && !(next && WORD.test(next));
+  }
+  function findMatch(text, used){
+    var best = null;
+    for (var k = 0; k < ALIASES.length; k++){
+      var alias = ALIASES[k][0], id = ALIASES[k][1];
+      if (used[id]) continue;
+      var i = text.indexOf(alias);
+      while (i > -1 && !boundaryOK(text, i, alias)) i = text.indexOf(alias, i + 1);
+      if (i > -1 && (!best || i < best.index || (i === best.index && alias.length > best.len))) best = {index: i, len: alias.length, id: id};
+    }
+    return best;
+  }
+  function makeLink(id, label){
+    var a = document.createElement('a');
+    a.className = 'gl'; a.href = '#' + id; a.setAttribute('data-g', id); a.textContent = label;
+    return a;
+  }
+  function linkify(root){
+    var used = {};
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode: function(n){
+      if (!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      return n.parentElement.closest(SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+    }});
+    var nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function(node){
+      var cur = node;
+      while (cur){
+        var m = findMatch(cur.nodeValue, used);
+        if (!m) break;
+        var hit = cur.splitText(m.index);
+        var rest = hit.splitText(m.len);
+        hit.parentNode.replaceChild(makeLink(m.id, hit.nodeValue), hit);
+        used[m.id] = true;
+        cur = rest;
+      }
+    });
+  }
+  document.querySelectorAll('main .cover, main .part, main .chapter').forEach(function(sec){
+    if (sec.id !== 'ch13') linkify(sec);
+  });
+
+  /* 3) 툴팁: 마우스를 올리거나 키보드로 포커스하면 짧은 뜻 */
+  var tip = document.createElement('div');
+  tip.className = 'gl-tip'; tip.id = 'gl-tip'; tip.setAttribute('role', 'tooltip'); tip.hidden = true;
+  document.body.appendChild(tip);
+  var canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+  function showTip(a){
+    var g = byId[a.getAttribute('data-g')]; if (!g) return;
+    tip.innerHTML = '<b></b><span></span><em>누르면 용어집으로 이동</em>';
+    tip.querySelector('b').textContent = g.term;
+    tip.querySelector('span').textContent = g.short;
+    tip.hidden = false;
+    a.setAttribute('aria-describedby', 'gl-tip');
+    var r = a.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - tw / 2, window.innerWidth - tw - 8));
+    var top = r.top - th - 10;
+    if (top < 8) top = r.bottom + 10;
+    tip.style.transform = 'translate(' + Math.round(left) + 'px,' + Math.round(top) + 'px)';
+  }
+  function hideTip(){
+    if (tip.hidden) return;
+    tip.hidden = true;
+    var a = document.querySelector('a.gl[aria-describedby]'); if (a) a.removeAttribute('aria-describedby');
+  }
+  if (canHover){
+    document.addEventListener('mouseover', function(e){ var a = e.target.closest && e.target.closest('a.gl'); if (a) showTip(a); });
+    document.addEventListener('mouseout', function(e){ var a = e.target.closest && e.target.closest('a.gl'); if (a && !a.contains(e.relatedTarget)) hideTip(); });
+  }
+  document.addEventListener('focusin', function(e){ var a = e.target.closest && e.target.closest('a.gl'); if (a && a.matches(':focus-visible')) showTip(a); });
+  document.addEventListener('focusout', function(e){ if (e.target.closest && e.target.closest('a.gl')) hideTip(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') hideTip(); });
+  window.addEventListener('scroll', hideTip, {passive: true});
+
+  /* 4) 누르면 용어집으로 이동 + 읽던 곳으로 돌아오기 */
+  var back = document.createElement('button');
+  back.className = 'backbtn'; back.type = 'button'; back.textContent = '↩ 읽던 곳으로'; back.hidden = true;
+  document.body.appendChild(back);
+  var returnLink = null, activeDt = null;
+  function flash(el){ if (!el) return; el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+  function clearReturn(){
+    if (activeDt){
+      activeDt.classList.remove('can-return');
+      activeDt.removeAttribute('role'); activeDt.removeAttribute('tabindex'); activeDt.removeAttribute('title');
+    }
+    activeDt = null; back.hidden = true;
+  }
+  /* 방금 누른 그 단어 위치로 돌아가 단어를 잠깐 밝힌다 */
+  function goBack(){
+    var a = returnLink; clearReturn(); returnLink = null;
+    if (!a) return;
+    a.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'center'});
+    flash(a);
+    a.focus({preventScroll: true});
+  }
+  document.addEventListener('click', function(e){
+    if (!e.target.closest) return;
+    if (e.target.closest('dt.can-return')){ goBack(); return; }
+    var a = e.target.closest('a.gl'); if (!a) return;
+    var dt = document.getElementById(a.getAttribute('data-g')); if (!dt) return;
+    e.preventDefault(); hideTip(); clearReturn();
+    returnLink = a; activeDt = dt;
+    dt.classList.add('can-return');
+    dt.setAttribute('role', 'button'); dt.setAttribute('tabindex', '0'); dt.setAttribute('title', '방금 읽던 곳으로');
+    dt.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
+    flash(dt); flash(dt.nextElementSibling);
+    back.hidden = false;
+  });
+  document.addEventListener('keydown', function(e){
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('dt.can-return')){ e.preventDefault(); goBack(); }
+  });
+  back.addEventListener('click', goBack);
+})();
+</script>
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* figures: build once when they enter the viewport, replay on demand */
+  var figs = document.querySelectorAll('.fig[data-anim]');
+  function play(f){ f.classList.remove('play'); void f.offsetWidth; f.classList.add('play'); }
+  if ('IntersectionObserver' in window && !reduce){
+    var fo = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ play(en.target); fo.unobserve(en.target); } });
+    }, {threshold: .35});
+    figs.forEach(function(f){ fo.observe(f); });
+  }
+  document.querySelectorAll('.replay').forEach(function(b){
+    b.addEventListener('click', function(){ play(b.closest('.fig')); });
+  });
+
+  /* reading progress */
+  var bar = document.getElementById('bar');
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, h.scrollTop / max) : 0) + ')';
+  }
+  window.addEventListener('scroll', onScroll, {passive: true}); onScroll();
+
+  /* toc scroll spy */
+  var links = {}; document.querySelectorAll('.toc a').forEach(function(a){ links[a.getAttribute('href').slice(1)] = a; });
+  var secs = Object.keys(links).map(function(id){ return document.getElementById(id); }).filter(Boolean);
+  function spy(){
+    var y = window.innerHeight * .3, cur = secs[0];
+    secs.forEach(function(s){ if (s.getBoundingClientRect().top <= y) cur = s; });
+    Object.keys(links).forEach(function(k){ links[k].classList.toggle('active', cur && k === cur.id); });
+  }
+  window.addEventListener('scroll', spy, {passive: true}); spy();
+
+  /* mobile toc drawer */
+  var toc = document.getElementById('toc'), openB = document.getElementById('tocOpen'), closeB = document.getElementById('tocClose');
+  function setToc(on){ toc.classList.toggle('open', on); openB.setAttribute('aria-expanded', on); document.body.style.overflow = on ? 'hidden' : ''; }
+  openB.addEventListener('click', function(){ setToc(true); });
+  closeB.addEventListener('click', function(){ setToc(false); });
+  toc.addEventListener('click', function(e){ if (e.target.closest('a') && toc.classList.contains('open')) setToc(false); });
+
+  /* cover: a slowly drifting knowledge graph */
+  var cv = document.getElementById('net'), ctx = cv.getContext('2d');
+  var nodes = [], W = 0, H = 0, colors = {}, frame = 0, running = true;
+  function readColors(){
+    var cs = getComputedStyle(document.documentElement);
+    colors.a = cs.getPropertyValue('--accent').trim(); colors.t = cs.getPropertyValue('--teal').trim();
+    colors.m = cs.getPropertyValue('--amber').trim(); colors.l = cs.getPropertyValue('--net-line').trim();
+  }
+  function size(){
+    var dpr = window.devicePixelRatio || 1, r = cv.getBoundingClientRect();
+    W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    if (!nodes.length){
+      var n = Math.max(14, Math.min(34, Math.round(W / 22)));
+      for (var i = 0; i < n; i++) nodes.push({x: Math.random()*W, y: Math.random()*H, vx:(Math.random()-.5)*.25, vy:(Math.random()-.5)*.25, r: 2.5 + Math.random()*3, k: i % 7 === 0 ? 'm' : (i % 3 === 0 ? 't' : 'a')});
+    }
+  }
+  function draw(){
+    if (frame++ % 90 === 0) readColors();
+    ctx.clearRect(0,0,W,H);
+    var D = Math.min(130, W / 4);
+    for (var i = 0; i < nodes.length; i++){
+      var p = nodes[i];
+      if (!reduce){ p.x += p.vx; p.y += p.vy; if (p.x < 6 || p.x > W-6) p.vx *= -1; if (p.y < 6 || p.y > H-6) p.vy *= -1; }
+      for (var j = i+1; j < nodes.length; j++){
+        var q = nodes[j], dx = p.x-q.x, dy = p.y-q.y, d = Math.sqrt(dx*dx+dy*dy);
+        if (d < D){ ctx.globalAlpha = (1 - d/D) * .8; ctx.strokeStyle = colors.l; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke(); }
+      }
+    }
+    ctx.globalAlpha = 1;
+    nodes.forEach(function(p){ ctx.fillStyle = colors[p.k]; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); });
+    if (!reduce && running) requestAnimationFrame(draw);
+  }
+  readColors(); size(); draw();
+
+  /* 어두운/밝은 화면 토글 */
+  var root = document.documentElement, themeBtns = document.querySelectorAll('[data-theme-toggle]');
+  function setTheme(t){
+    root.setAttribute('data-theme', t);
+    themeBtns.forEach(function(b){
+      b.textContent = t === 'dark' ? '☀ 밝게' : '☾ 어둡게';
+      b.setAttribute('aria-label', t === 'dark' ? '밝은 화면으로 바꾸기' : '어두운 화면으로 바꾸기');
+    });
+    try { localStorage.setItem('gs-theme', t); } catch (e) {}
+    readColors(); if (reduce) draw();
+  }
+  setTheme(root.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+  themeBtns.forEach(function(b){
+    b.addEventListener('click', function(){ setTheme(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
+  });
+  window.addEventListener('resize', function(){ size(); if (reduce) draw(); });
+  if ('IntersectionObserver' in window && !reduce){
+    new IntersectionObserver(function(es){ var vis = es[0].isIntersecting; if (vis && !running){ running = true; draw(); } else if (!vis) running = false; }).observe(cv);
+  }})();
+</script>
+</body>
+</html>

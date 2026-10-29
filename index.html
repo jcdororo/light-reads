@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="어려운 기술 주제를 개념 중심으로 편하게 읽히도록 정리한 책 모음.">
+<title>가볍게 읽는 시리즈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@400;700&display=swap">
+<style>
+/* 시리즈 표지. 색은 아래 토큰에서만 정의한다(각 책과 같은 팔레트). */
+:root{
+  color-scheme:dark;
+  --paper:#0B0D10; --paper-2:#14181D; --ink:#F2F4F6; --muted:#9AA4B0; --rule:#232A32;
+  --accent:#8FA8FF; --amber:#F0B85A; --shadow:rgba(0,0,0,.6);
+  --f-body:"Noto Serif KR","Apple SD Gothic Neo",serif;
+  --f-ui:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --paper:#F6F7F5; --paper-2:#ECEFEC; --ink:#1B232B; --muted:#5B6672; --rule:#D6DCD9;
+  --accent:#2C4EC2; --amber:#A86F08; --shadow:rgba(20,30,40,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);line-height:1.8}
+.wrap{max-width:760px;margin:0 auto;padding:72px max(16px,env(safe-area-inset-right,0px)) 96px max(16px,env(safe-area-inset-left,0px))}
+.top{display:flex;justify-content:flex-end;margin-bottom:56px}
+.btn{font:500 .8125rem/1 var(--f-ui);color:var(--ink);background:var(--paper-2);border:1px solid var(--rule);border-radius:999px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.eyebrow{font:500 .8125rem/1.4 var(--f-ui);color:var(--muted);letter-spacing:.04em;margin:0 0 12px}
+h1{font:700 clamp(2.2rem,6vw,3.4rem)/1.1 var(--f-ui);letter-spacing:-.03em;margin:0 0 20px}
+h1 em{font-style:normal;color:var(--amber)}
+.lead{color:var(--muted);margin:0 0 56px;max-width:36em}
+.books{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.book{display:block;text-decoration:none;color:inherit;background:var(--paper-2);border:1px solid var(--rule);border-radius:14px;padding:24px 24px 22px;transition:border-color .2s,transform .2s,box-shadow .2s}
+.book:hover,.book:focus-visible{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 10px 28px var(--shadow);outline:none}
+.book .no{font:500 .8125rem/1 var(--f-ui);color:var(--muted);margin:0 0 10px}
+.book h2{font:700 1.45rem/1.3 var(--f-ui);margin:0 0 8px}
+.book h2 em{font-style:normal;color:var(--amber)}
+.book p{margin:0;color:var(--muted)}
+.book .go{display:inline-block;margin-top:14px;font:500 .875rem/1 var(--f-ui);color:var(--accent)}
+.soon{border-style:dashed;background:transparent;pointer-events:none}
+.soon h2{color:var(--muted)}
+footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--rule);font:400 .8125rem/1.7 var(--f-ui);color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.book{transition:none}.book:hover{transform:none}}
+</style>
+<script>
+(function(){ var t = 'dark'; try { if (localStorage.getItem('gs-theme') === 'light') t = 'light'; } catch (e) {} document.documentElement.setAttribute('data-theme', t); })();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><button class="btn" id="theme" type="button">☀ 밝게</button></div>
+
+  <p class="eyebrow">LIGHT READS</p>
+  <h1><em>가볍게 읽는</em> 시리즈</h1>
+  <p class="lead">어려운 기술 주제를 실습 없이 개념 중심으로, 처음부터 끝까지 편하게 읽히도록 정리한 책 모음입니다.</p>
+
+  <ul class="books">
+    <li>
+      <a class="book" href="graph-studio/">
+        <p class="no">01 · 3부 13장</p>
+        <h2><em>가볍게 읽는</em> Graph Studio</h2>
+        <p>RDF와 온톨로지의 기초에서 시작해 Altair Graph Studio가 그 생각을 어떻게 제품으로 옮겼는지까지 다룹니다.</p>
+        <span class="go">읽기 →</span>
+      </a>
+    </li>
+    <li>
+      <div class="book soon" aria-label="다음 책 준비 중">
+        <p class="no">02</p>
+        <h2>다음 책 준비 중</h2>
+      </div>
+    </li>
+  </ul>
+
+  <footer>각 책은 왼쪽 목차(휴대폰은 상단 바)의 버튼으로 밝은 화면과 어두운 화면을 바꿀 수 있습니다.</footer>
+</div>
+<script>
+(function(){
+  var root = document.documentElement, btn = document.getElementById('theme');
+  function set(t){
+    root.setAttribute('data-theme', t);
+    btn.textContent = t === 'dark' ? '☀ 밝게' : '☾ 어둡게';
+    btn.setAttribute('aria-label', t === 'dark' ? '밝은 화면으로 바꾸기' : '어두운 화면으로 바꾸기');
+    try { localStorage.setItem('gs-theme', t); } catch (e) {}
+  }
+  set(root.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+  btn.addEventListener('click', function(){ set(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
+})();
+</script>
+</body>
+</html>
